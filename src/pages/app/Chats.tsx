@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Check, X, Send, Star, Award, ArrowLeft, Coins } from "lucide-react";
+import { DEMO_CHATS } from "@/lib/demoData";
 
 interface SwapRow {
   id: string;
@@ -213,10 +214,6 @@ const Chats = () => {
       </div>
       {loading ? (
         <div className="text-center py-20 text-muted-foreground">Loading...</div>
-      ) : swaps.length === 0 ? (
-        <div className="text-center py-20 rounded-3xl border bg-card">
-          <p className="text-muted-foreground">No swaps yet. Find a match in Discover!</p>
-        </div>
       ) : (
         <div className="space-y-3">
           {swaps.map((s) => (
@@ -241,9 +238,62 @@ const Chats = () => {
               }`}>{s.status}</span>
             </button>
           ))}
+
+          {DEMO_CHATS.map((c) => (
+            <DemoChatRow key={c.id} chat={c} />
+          ))}
         </div>
       )}
     </div>
+  );
+};
+
+const DemoChatRow = ({ chat }: { chat: typeof DEMO_CHATS[number] }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button onClick={() => setOpen(true)} className="w-full text-left rounded-3xl border bg-card p-5 hover:shadow-card shadow-soft transition-smooth flex items-center gap-4">
+        <div className="h-12 w-12 rounded-full overflow-hidden bg-secondary shrink-0">
+          <img src={chat.other.avatar_url} alt="" className="h-full w-full object-cover" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-display font-bold truncate">{chat.other.full_name}</span>
+            {chat.unread > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full gradient-accent text-accent-foreground font-bold">{chat.unread} NEW</span>}
+          </div>
+          <div className="text-sm text-muted-foreground truncate">{chat.preview}</div>
+        </div>
+        <span className={`text-xs px-3 py-1 rounded-full capitalize shrink-0 ${
+          chat.status === "accepted" ? "bg-success/10 text-success" :
+          chat.status === "completed" ? "bg-primary/10 text-primary" :
+          "bg-accent/10 text-accent"
+        }`}>{chat.status}</span>
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <img src={chat.other.avatar_url} alt="" className="h-10 w-10 rounded-full" />
+              <div>
+                <div>{chat.other.full_name}</div>
+                <div className="text-xs font-normal text-muted-foreground">{chat.request_skill} ↔ {chat.offer_skill}</div>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-96 overflow-y-auto py-2">
+            {chat.messages.map((m, i) => (
+              <div key={i} className={`flex ${m.sender === "me" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm ${m.sender === "me" ? "gradient-primary text-primary-foreground rounded-br-sm" : "bg-secondary rounded-bl-sm"}`}>
+                  {m.body}
+                  <div className="text-[10px] opacity-70 mt-1">{m.time}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
