@@ -13,6 +13,9 @@ import Profile from "./pages/app/Profile";
 import Discover from "./pages/app/Discover";
 import Chats from "./pages/app/Chats";
 import Certificates from "./pages/app/Certificates";
+import Matches from "./pages/app/Matches";
+import Exchanges from "./pages/app/Exchanges";
+import Leaderboard from "./pages/app/Leaderboard";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +47,18 @@ const App = () => (
           <Route
             path="/app/certificates"
             element={<ProtectedRoute><AppLayout><Certificates /></AppLayout></ProtectedRoute>}
+          />
+          <Route
+            path="/app/matches"
+            element={<ProtectedRoute><AppLayout><Matches /></AppLayout></ProtectedRoute>}
+          />
+          <Route
+            path="/app/exchanges"
+            element={<ProtectedRoute><AppLayout><Exchanges /></AppLayout></ProtectedRoute>}
+          />
+          <Route
+            path="/app/leaderboard"
+            element={<ProtectedRoute><AppLayout><Leaderboard /></AppLayout></ProtectedRoute>}
           />
           <Route path="*" element={<NotFound />} />
         </Routes>

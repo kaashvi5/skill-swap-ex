@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Search, Star, MapPin, Sparkles, FileCheck, Send } from "lucide-react";
+import { DEMO_USERS } from "@/lib/demoData";
 
 interface UserCard {
   user_id: string;
@@ -62,8 +63,16 @@ const Discover = () => {
         lList.forEach((l) => { if (myTeachList.includes(l.skill.toLowerCase())) score += 1; });
         return { ...p, teach: tList, learn: lList, matchScore: score };
       });
-      cards.sort((a, b) => b.matchScore - a.matchScore || b.trust_score - a.trust_score);
-      setUsers(cards);
+      // Mix in demo global users so the world feels populated
+      const demoCards: UserCard[] = DEMO_USERS.map((u) => {
+        let score = 0;
+        u.teach.forEach((t) => { if (myLearnList.includes(t.skill.toLowerCase())) score += 2; });
+        u.learn.forEach((l) => { if (myTeachList.includes(l.skill.toLowerCase())) score += 1; });
+        return { ...u, matchScore: score };
+      });
+      const all = [...cards, ...demoCards];
+      all.sort((a, b) => b.matchScore - a.matchScore || b.trust_score - a.trust_score);
+      setUsers(all);
       setLoading(false);
     })();
   }, [user]);
@@ -93,6 +102,10 @@ const Discover = () => {
     if (!user || !target) return;
     if (!offerSkill.trim() || !requestSkill.trim()) { toast.error("Pick what you offer and want"); return; }
     setSending(true);
+    if (target.user_id.startsWith("demo-")) {
+      toast.success(`Demo: swap request sent to ${target.full_name}!`);
+      setTarget(null); setSending(false); return;
+    }
     const { error } = await supabase.from("swap_requests").insert({
       requester_id: user.id,
       recipient_id: target.user_id,

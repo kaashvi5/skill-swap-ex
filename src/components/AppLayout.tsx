@@ -1,7 +1,7 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Home, Users, MessageCircle, User, LogOut, Award } from "lucide-react";
+import { Home, Users, MessageCircle, User, LogOut, Award, Sparkles, Repeat, Trophy } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 export const AppLayout = ({ children }: { children: React.ReactNode }) => {
@@ -16,10 +16,14 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const navItems = [
     { to: "/app", icon: Home, label: "Home" },
     { to: "/app/discover", icon: Users, label: "Discover" },
+    { to: "/app/matches", icon: Sparkles, label: "Matches" },
+    { to: "/app/exchanges", icon: Repeat, label: "Swaps" },
     { to: "/app/chats", icon: MessageCircle, label: "Chats" },
+    { to: "/app/leaderboard", icon: Trophy, label: "Ranks" },
     { to: "/app/certificates", icon: Award, label: "Certs" },
     { to: "/app/profile", icon: User, label: "Profile" },
   ];
+  const mobileItems = navItems.filter((n) => ["/app", "/app/matches", "/app/chats", "/app/leaderboard", "/app/profile"].includes(n.to));
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -61,7 +65,7 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur-xl">
         <div className="grid grid-cols-5">
-          {navItems.map((item) => (
+          {mobileItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

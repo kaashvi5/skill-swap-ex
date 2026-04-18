@@ -6,18 +6,33 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { useSearchParams } from "react-router-dom";
-import { Camera, Plus, Trash2, FileCheck, Upload, Star, Coins } from "lucide-react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { Camera, Plus, Trash2, FileCheck, Upload, Star, Coins, Settings, Bell, Globe, Shield, LogOut, User as UserIcon } from "lucide-react";
 
 type Level = "beginner" | "intermediate" | "expert";
 interface SkillTeach { id: string; skill: string; level: Level; description: string | null; proof_url: string | null; }
 interface SkillLearn { id: string; skill: string; level: Level; }
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const isOnboarding = params.get("onboarding") === "1";
+
+  const [tab, setTab] = useState(params.get("tab") === "settings" ? "settings" : "profile");
+
+  // Settings state (persisted to localStorage — pure UI prefs)
+  const [notifEmail, setNotifEmail] = useState(() => localStorage.getItem("ss-notif-email") !== "0");
+  const [notifMatch, setNotifMatch] = useState(() => localStorage.getItem("ss-notif-match") !== "0");
+  const [publicProfile, setPublicProfile] = useState(() => localStorage.getItem("ss-public") !== "0");
+  const [language, setLanguage] = useState(() => localStorage.getItem("ss-lang") || "en");
+  useEffect(() => { localStorage.setItem("ss-notif-email", notifEmail ? "1" : "0"); }, [notifEmail]);
+  useEffect(() => { localStorage.setItem("ss-notif-match", notifMatch ? "1" : "0"); }, [notifMatch]);
+  useEffect(() => { localStorage.setItem("ss-public", publicProfile ? "1" : "0"); }, [publicProfile]);
+  useEffect(() => { localStorage.setItem("ss-lang", language); }, [language]);
 
   const [fullName, setFullName] = useState("");
   const [bio, setBio] = useState("");
@@ -146,117 +161,195 @@ const Profile = () => {
         </div>
       )}
 
-      <section className="rounded-3xl border bg-card p-6 md:p-8 shadow-soft">
-        <h2 className="font-display text-2xl font-bold mb-6">Your profile</h2>
-        <div className="flex items-start gap-6 mb-6 flex-wrap">
-          <div className="relative">
-            <div className="h-28 w-28 rounded-full overflow-hidden bg-secondary border-4 border-card shadow-card flex items-center justify-center">
-              {avatarUrl ? <img src={avatarUrl} alt="avatar" className="h-full w-full object-cover" /> : <Camera className="h-8 w-8 text-muted-foreground" />}
-            </div>
-            <button onClick={() => fileInput.current?.click()} disabled={uploading} className="absolute -bottom-1 -right-1 h-10 w-10 rounded-full gradient-primary text-primary-foreground flex items-center justify-center shadow-glow hover:scale-105 transition-smooth">
-              <Camera className="h-4 w-4" />
-            </button>
-            <input ref={fileInput} type="file" accept="image/*" onChange={handleAvatar} className="hidden" />
-          </div>
-          <div className="flex gap-3">
-            <div className="rounded-2xl border px-4 py-3">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground"><Coins className="h-3.5 w-3.5" /> Credits</div>
-              <div className="font-display text-2xl font-bold">{credits}</div>
-            </div>
-            <div className="rounded-2xl border px-4 py-3">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground"><Star className="h-3.5 w-3.5" /> Trust</div>
-              <div className="font-display text-2xl font-bold">{trust}</div>
-            </div>
-          </div>
-        </div>
-        {!avatarUrl && <p className="text-sm text-destructive mb-4">⚠️ Profile photo is required to swap skills.</p>}
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="rounded-full p-1 h-auto">
+          <TabsTrigger value="profile" className="rounded-full gap-2"><UserIcon className="h-4 w-4" />Profile</TabsTrigger>
+          <TabsTrigger value="settings" className="rounded-full gap-2"><Settings className="h-4 w-4" />Settings</TabsTrigger>
+        </TabsList>
 
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div className="space-y-2 sm:col-span-2"><Label>Full name *</Label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={80} /></div>
-          <div className="space-y-2 sm:col-span-2"><Label>Bio</Label><Textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={500} placeholder="Tell others about you..." rows={3} /></div>
-          <div className="space-y-2"><Label>Country</Label><Input value={country} onChange={(e) => setCountry(e.target.value)} maxLength={60} placeholder="India" /></div>
-          <div className="space-y-2"><Label>City</Label><Input value={city} onChange={(e) => setCity(e.target.value)} maxLength={60} placeholder="Mumbai" /></div>
-        </div>
-        <Button onClick={saveProfile} disabled={savingProfile} className="mt-6 rounded-full gradient-primary text-primary-foreground border-0">
-          {savingProfile ? "Saving..." : "Save profile"}
-        </Button>
-      </section>
-
-      <section className="rounded-3xl border bg-card p-6 md:p-8 shadow-soft">
-        <h2 className="font-display text-2xl font-bold mb-1">Skills I can teach</h2>
-        <p className="text-sm text-muted-foreground mb-5">Upload proof so learners can trust your expertise.</p>
-        <div className="space-y-3 mb-6">
-          {teach.map((s) => (
-            <div key={s.id} className="rounded-2xl border p-4 flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-display font-bold">{s.skill}</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary capitalize">{s.level}</span>
-                  {s.proof_url && <a href={s.proof_url} target="_blank" rel="noreferrer" className="text-xs px-2 py-0.5 rounded-full bg-success/10 text-success flex items-center gap-1"><FileCheck className="h-3 w-3" />Verified proof</a>}
+        <TabsContent value="profile" className="space-y-8 mt-6">
+          <section className="rounded-3xl border bg-card p-6 md:p-8 shadow-soft">
+            <h2 className="font-display text-2xl font-bold mb-6">Your profile</h2>
+            <div className="flex items-start gap-6 mb-6 flex-wrap">
+              <div className="relative">
+                <div className="h-28 w-28 rounded-full overflow-hidden bg-secondary border-4 border-card shadow-card flex items-center justify-center">
+                  {avatarUrl ? <img src={avatarUrl} alt="avatar" className="h-full w-full object-cover" /> : <Camera className="h-8 w-8 text-muted-foreground" />}
                 </div>
-                {s.description && <p className="text-sm text-muted-foreground mt-1">{s.description}</p>}
+                <button onClick={() => fileInput.current?.click()} disabled={uploading} className="absolute -bottom-1 -right-1 h-10 w-10 rounded-full gradient-primary text-primary-foreground flex items-center justify-center shadow-glow hover:scale-105 transition-smooth">
+                  <Camera className="h-4 w-4" />
+                </button>
+                <input ref={fileInput} type="file" accept="image/*" onChange={handleAvatar} className="hidden" />
               </div>
-              <Button size="icon" variant="ghost" onClick={() => removeTeach(s.id)}><Trash2 className="h-4 w-4" /></Button>
+              <div className="flex gap-3">
+                <div className="rounded-2xl border px-4 py-3">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground"><Coins className="h-3.5 w-3.5" /> Credits</div>
+                  <div className="font-display text-2xl font-bold">{credits}</div>
+                </div>
+                <div className="rounded-2xl border px-4 py-3">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground"><Star className="h-3.5 w-3.5" /> Trust</div>
+                  <div className="font-display text-2xl font-bold">{trust}</div>
+                </div>
+              </div>
             </div>
-          ))}
-          {teach.length === 0 && <p className="text-sm text-muted-foreground">No teaching skills yet.</p>}
-        </div>
-        <div className="rounded-2xl bg-secondary p-4 space-y-3">
-          <div className="grid sm:grid-cols-[1fr_auto] gap-3">
-            <Input placeholder="Skill (e.g. Guitar, Python)" value={newTeach.skill} onChange={(e) => setNewTeach({ ...newTeach, skill: e.target.value })} maxLength={60} />
-            <Select value={newTeach.level} onValueChange={(v) => setNewTeach({ ...newTeach, level: v as Level })}>
-              <SelectTrigger className="sm:w-40"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="beginner">Beginner</SelectItem>
-                <SelectItem value="intermediate">Intermediate</SelectItem>
-                <SelectItem value="expert">Expert</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Textarea placeholder="What can learners expect? (optional)" value={newTeach.description} onChange={(e) => setNewTeach({ ...newTeach, description: e.target.value })} maxLength={300} rows={2} />
-          <div className="flex flex-wrap items-center gap-3">
-            <input ref={proofInput} type="file" accept="image/*,.pdf" onChange={(e) => setPendingProof(e.target.files?.[0] || null)} className="hidden" />
-            <Button type="button" variant="outline" size="sm" onClick={() => proofInput.current?.click()} className="rounded-full">
-              <Upload className="h-4 w-4 mr-1" />{pendingProof ? pendingProof.name.slice(0, 24) : "Add proof (image/PDF)"}
-            </Button>
-            <Button onClick={addTeach} className="rounded-full gradient-primary text-primary-foreground border-0 ml-auto">
-              <Plus className="h-4 w-4 mr-1" />Add skill
-            </Button>
-          </div>
-        </div>
-      </section>
+            {!avatarUrl && <p className="text-sm text-destructive mb-4">⚠️ Profile photo is required to swap skills.</p>}
 
-      <section className="rounded-3xl border bg-card p-6 md:p-8 shadow-soft">
-        <h2 className="font-display text-2xl font-bold mb-5">Skills I want to learn</h2>
-        <div className="space-y-3 mb-6">
-          {learn.map((s) => (
-            <div key={s.id} className="rounded-2xl border p-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-display font-bold">{s.skill}</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent capitalize">{s.level}</span>
-              </div>
-              <Button size="icon" variant="ghost" onClick={() => removeLearn(s.id)}><Trash2 className="h-4 w-4" /></Button>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2 sm:col-span-2"><Label>Full name *</Label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={80} /></div>
+              <div className="space-y-2 sm:col-span-2"><Label>Bio</Label><Textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={500} placeholder="Tell others about you..." rows={3} /></div>
+              <div className="space-y-2"><Label>Country</Label><Input value={country} onChange={(e) => setCountry(e.target.value)} maxLength={60} placeholder="India" /></div>
+              <div className="space-y-2"><Label>City</Label><Input value={city} onChange={(e) => setCity(e.target.value)} maxLength={60} placeholder="Mumbai" /></div>
             </div>
-          ))}
-          {learn.length === 0 && <p className="text-sm text-muted-foreground">Nothing here yet.</p>}
-        </div>
-        <div className="rounded-2xl bg-secondary p-4 grid sm:grid-cols-[1fr_auto_auto] gap-3">
-          <Input placeholder="Skill you want to learn" value={newLearn.skill} onChange={(e) => setNewLearn({ ...newLearn, skill: e.target.value })} maxLength={60} />
-          <Select value={newLearn.level} onValueChange={(v) => setNewLearn({ ...newLearn, level: v as Level })}>
-            <SelectTrigger className="sm:w-40"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="beginner">Beginner</SelectItem>
-              <SelectItem value="intermediate">Intermediate</SelectItem>
-              <SelectItem value="expert">Expert</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button onClick={addLearn} className="rounded-full gradient-accent text-accent-foreground border-0">
-            <Plus className="h-4 w-4 mr-1" />Add
-          </Button>
-        </div>
-      </section>
+            <Button onClick={saveProfile} disabled={savingProfile} className="mt-6 rounded-full gradient-primary text-primary-foreground border-0">
+              {savingProfile ? "Saving..." : "Save profile"}
+            </Button>
+          </section>
+
+          <section className="rounded-3xl border bg-card p-6 md:p-8 shadow-soft">
+            <h2 className="font-display text-2xl font-bold mb-1">Skills I can teach</h2>
+            <p className="text-sm text-muted-foreground mb-5">Upload proof so learners can trust your expertise.</p>
+            <div className="space-y-3 mb-6">
+              {teach.map((s) => (
+                <div key={s.id} className="rounded-2xl border p-4 flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-display font-bold">{s.skill}</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary capitalize">{s.level}</span>
+                      {s.proof_url && <a href={s.proof_url} target="_blank" rel="noreferrer" className="text-xs px-2 py-0.5 rounded-full bg-success/10 text-success flex items-center gap-1"><FileCheck className="h-3 w-3" />Verified proof</a>}
+                    </div>
+                    {s.description && <p className="text-sm text-muted-foreground mt-1">{s.description}</p>}
+                  </div>
+                  <Button size="icon" variant="ghost" onClick={() => removeTeach(s.id)}><Trash2 className="h-4 w-4" /></Button>
+                </div>
+              ))}
+              {teach.length === 0 && <p className="text-sm text-muted-foreground">No teaching skills yet.</p>}
+            </div>
+            <div className="rounded-2xl bg-secondary p-4 space-y-3">
+              <div className="grid sm:grid-cols-[1fr_auto] gap-3">
+                <Input placeholder="Skill (e.g. Guitar, Python)" value={newTeach.skill} onChange={(e) => setNewTeach({ ...newTeach, skill: e.target.value })} maxLength={60} />
+                <Select value={newTeach.level} onValueChange={(v) => setNewTeach({ ...newTeach, level: v as Level })}>
+                  <SelectTrigger className="sm:w-40"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="expert">Expert</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Textarea placeholder="What can learners expect? (optional)" value={newTeach.description} onChange={(e) => setNewTeach({ ...newTeach, description: e.target.value })} maxLength={300} rows={2} />
+              <div className="flex flex-wrap items-center gap-3">
+                <input ref={proofInput} type="file" accept="image/*,.pdf" onChange={(e) => setPendingProof(e.target.files?.[0] || null)} className="hidden" />
+                <Button type="button" variant="outline" size="sm" onClick={() => proofInput.current?.click()} className="rounded-full">
+                  <Upload className="h-4 w-4 mr-1" />{pendingProof ? pendingProof.name.slice(0, 24) : "Add proof (image/PDF)"}
+                </Button>
+                <Button onClick={addTeach} className="rounded-full gradient-primary text-primary-foreground border-0 ml-auto">
+                  <Plus className="h-4 w-4 mr-1" />Add skill
+                </Button>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border bg-card p-6 md:p-8 shadow-soft">
+            <h2 className="font-display text-2xl font-bold mb-5">Skills I want to learn</h2>
+            <div className="space-y-3 mb-6">
+              {learn.map((s) => (
+                <div key={s.id} className="rounded-2xl border p-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-display font-bold">{s.skill}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent capitalize">{s.level}</span>
+                  </div>
+                  <Button size="icon" variant="ghost" onClick={() => removeLearn(s.id)}><Trash2 className="h-4 w-4" /></Button>
+                </div>
+              ))}
+              {learn.length === 0 && <p className="text-sm text-muted-foreground">Nothing here yet.</p>}
+            </div>
+            <div className="rounded-2xl bg-secondary p-4 grid sm:grid-cols-[1fr_auto_auto] gap-3">
+              <Input placeholder="Skill you want to learn" value={newLearn.skill} onChange={(e) => setNewLearn({ ...newLearn, skill: e.target.value })} maxLength={60} />
+              <Select value={newLearn.level} onValueChange={(v) => setNewLearn({ ...newLearn, level: v as Level })}>
+                <SelectTrigger className="sm:w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="beginner">Beginner</SelectItem>
+                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                  <SelectItem value="expert">Expert</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button onClick={addLearn} className="rounded-full gradient-accent text-accent-foreground border-0">
+                <Plus className="h-4 w-4 mr-1" />Add
+              </Button>
+            </div>
+          </section>
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6 mt-6">
+          <section className="rounded-3xl border bg-card p-6 md:p-8 shadow-soft">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center"><Bell className="h-5 w-5" /></div>
+              <div>
+                <h2 className="font-display text-xl font-bold">Notifications</h2>
+                <p className="text-sm text-muted-foreground">Choose what you'd like to hear about.</p>
+              </div>
+            </div>
+            <SettingRow label="Email notifications" desc="Updates about swaps, ratings & certificates." checked={notifEmail} onChange={setNotifEmail} />
+            <SettingRow label="New match alerts" desc="Ping me when AI finds a great match." checked={notifMatch} onChange={setNotifMatch} />
+          </section>
+
+          <section className="rounded-3xl border bg-card p-6 md:p-8 shadow-soft">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="h-10 w-10 rounded-2xl bg-accent/10 text-accent flex items-center justify-center"><Globe className="h-5 w-5" /></div>
+              <div>
+                <h2 className="font-display text-xl font-bold">Preferences</h2>
+                <p className="text-sm text-muted-foreground">Personalize your experience.</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2 max-w-xs">
+                <Label>Language</Label>
+                <Select value={language} onValueChange={setLanguage}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="es">Español</SelectItem>
+                    <SelectItem value="fr">Français</SelectItem>
+                    <SelectItem value="hi">हिन्दी</SelectItem>
+                    <SelectItem value="pt">Português</SelectItem>
+                    <SelectItem value="ja">日本語</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <SettingRow label="Show my profile publicly" desc="Appear in Discover & Leaderboard." checked={publicProfile} onChange={setPublicProfile} />
+            </div>
+          </section>
+
+          <section className="rounded-3xl border bg-card p-6 md:p-8 shadow-soft">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center"><Shield className="h-5 w-5" /></div>
+              <div>
+                <h2 className="font-display text-xl font-bold">Account</h2>
+                <p className="text-sm text-muted-foreground">Email: <span className="font-mono">{user?.email}</span></p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" onClick={async () => { await signOut(); navigate("/"); }} className="rounded-full gap-2">
+                <LogOut className="h-4 w-4" />Sign out
+              </Button>
+              <Button variant="ghost" onClick={() => toast.info("Contact support to delete your account.")} className="rounded-full text-destructive hover:text-destructive">
+                Delete account
+              </Button>
+            </div>
+          </section>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
+
+const SettingRow = ({ label, desc, checked, onChange }: { label: string; desc: string; checked: boolean; onChange: (v: boolean) => void }) => (
+  <div className="flex items-center justify-between gap-4 py-3 border-b last:border-0">
+    <div>
+      <div className="font-semibold">{label}</div>
+      <div className="text-sm text-muted-foreground">{desc}</div>
+    </div>
+    <Switch checked={checked} onCheckedChange={onChange} />
+  </div>
+);
 
 export default Profile;
