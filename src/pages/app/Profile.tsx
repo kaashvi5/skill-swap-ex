@@ -6,18 +6,33 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { useSearchParams } from "react-router-dom";
-import { Camera, Plus, Trash2, FileCheck, Upload, Star, Coins } from "lucide-react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { Camera, Plus, Trash2, FileCheck, Upload, Star, Coins, Settings, Bell, Globe, Shield, LogOut, User as UserIcon } from "lucide-react";
 
 type Level = "beginner" | "intermediate" | "expert";
 interface SkillTeach { id: string; skill: string; level: Level; description: string | null; proof_url: string | null; }
 interface SkillLearn { id: string; skill: string; level: Level; }
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const isOnboarding = params.get("onboarding") === "1";
+
+  const [tab, setTab] = useState(params.get("tab") === "settings" ? "settings" : "profile");
+
+  // Settings state (persisted to localStorage — pure UI prefs)
+  const [notifEmail, setNotifEmail] = useState(() => localStorage.getItem("ss-notif-email") !== "0");
+  const [notifMatch, setNotifMatch] = useState(() => localStorage.getItem("ss-notif-match") !== "0");
+  const [publicProfile, setPublicProfile] = useState(() => localStorage.getItem("ss-public") !== "0");
+  const [language, setLanguage] = useState(() => localStorage.getItem("ss-lang") || "en");
+  useEffect(() => { localStorage.setItem("ss-notif-email", notifEmail ? "1" : "0"); }, [notifEmail]);
+  useEffect(() => { localStorage.setItem("ss-notif-match", notifMatch ? "1" : "0"); }, [notifMatch]);
+  useEffect(() => { localStorage.setItem("ss-public", publicProfile ? "1" : "0"); }, [publicProfile]);
+  useEffect(() => { localStorage.setItem("ss-lang", language); }, [language]);
 
   const [fullName, setFullName] = useState("");
   const [bio, setBio] = useState("");
