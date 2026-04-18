@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Award, Download } from "lucide-react";
 import jsPDF from "jspdf";
+import { DEMO_CERTS } from "@/lib/demoData";
 
 interface Cert {
   id: string;
@@ -36,7 +37,12 @@ const Certificates = () => {
         teacher: { full_name: profs?.find((p: any) => p.user_id === c.teacher_id)?.full_name || "Teacher" },
         learner: { full_name: me?.full_name || "Learner" },
       }));
-      setCerts(mapped);
+      const learnerName = me?.full_name || "Learner";
+      const demoMapped: Cert[] = DEMO_CERTS.map((d) => ({
+        id: d.id, skill: d.skill, issued_at: d.issued_at,
+        teacher: { full_name: d.teacher }, learner: { full_name: learnerName },
+      }));
+      setCerts([...mapped, ...demoMapped]);
       setLoading(false);
     })();
   }, [user]);
@@ -104,11 +110,6 @@ const Certificates = () => {
       </div>
       {loading ? (
         <div className="text-center py-20 text-muted-foreground">Loading...</div>
-      ) : certs.length === 0 ? (
-        <div className="text-center py-20 rounded-3xl border bg-card">
-          <Award className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">No certificates yet. Complete a swap session to earn one!</p>
-        </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-5">
           {certs.map((c) => (
