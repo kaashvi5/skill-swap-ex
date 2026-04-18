@@ -14,16 +14,289 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      certificates: {
+        Row: {
+          id: string
+          issued_at: string
+          learner_id: string
+          skill: string
+          swap_id: string
+          teacher_id: string
+        }
+        Insert: {
+          id?: string
+          issued_at?: string
+          learner_id: string
+          skill: string
+          swap_id: string
+          teacher_id: string
+        }
+        Update: {
+          id?: string
+          issued_at?: string
+          learner_id?: string
+          skill?: string
+          swap_id?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_swap_id_fkey"
+            columns: ["swap_id"]
+            isOneToOne: false
+            referencedRelation: "swap_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sender_id: string
+          swap_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          sender_id: string
+          swap_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          swap_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_swap_id_fkey"
+            columns: ["swap_id"]
+            isOneToOne: false
+            referencedRelation: "swap_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          credits: number
+          full_name: string
+          id: string
+          ratings_count: number
+          trust_score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          credits?: number
+          full_name: string
+          id?: string
+          ratings_count?: number
+          trust_score?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          credits?: number
+          full_name?: string
+          id?: string
+          ratings_count?: number
+          trust_score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          ratee_id: string
+          rater_id: string
+          stars: number
+          swap_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          ratee_id: string
+          rater_id: string
+          stars: number
+          swap_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          ratee_id?: string
+          rater_id?: string
+          stars?: number
+          swap_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_swap_id_fkey"
+            columns: ["swap_id"]
+            isOneToOne: false
+            referencedRelation: "swap_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skills_learn: {
+        Row: {
+          created_at: string
+          id: string
+          level: Database["public"]["Enums"]["skill_level"]
+          skill: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level?: Database["public"]["Enums"]["skill_level"]
+          skill: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: Database["public"]["Enums"]["skill_level"]
+          skill?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      skills_teach: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          level: Database["public"]["Enums"]["skill_level"]
+          proof_url: string | null
+          skill: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          level?: Database["public"]["Enums"]["skill_level"]
+          proof_url?: string | null
+          skill: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          level?: Database["public"]["Enums"]["skill_level"]
+          proof_url?: string | null
+          skill?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      swap_requests: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          offer_skill: string
+          recipient_id: string
+          request_skill: string
+          requester_id: string
+          status: Database["public"]["Enums"]["swap_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          offer_skill: string
+          recipient_id: string
+          request_skill: string
+          requester_id: string
+          status?: Database["public"]["Enums"]["swap_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          offer_skill?: string
+          recipient_id?: string
+          request_skill?: string
+          requester_id?: string
+          status?: Database["public"]["Enums"]["swap_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      skill_level: "beginner" | "intermediate" | "expert"
+      swap_status:
+        | "pending"
+        | "accepted"
+        | "rejected"
+        | "completed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +423,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      skill_level: ["beginner", "intermediate", "expert"],
+      swap_status: [
+        "pending",
+        "accepted",
+        "rejected",
+        "completed",
+        "cancelled",
+      ],
+    },
   },
 } as const
