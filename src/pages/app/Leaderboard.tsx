@@ -24,13 +24,15 @@ const Leaderboard = () => {
 
   useEffect(() => {
     (async () => {
-      const { data: profiles } = await supabase.from("profiles").select("user_id,full_name,avatar_url,country,trust_score,ratings_count,credits");
+      const { data: profiles } = await supabase.from("profiles").select("user_id,full_name,avatar_url,country,trust_score,ratings_count");
+      const { data: myCredits } = await supabase.from("user_credits").select("user_id,credits");
       const { data: certs } = await supabase.from("certificates").select("learner_id");
       const certCount = (id: string) => (certs || []).filter((c: any) => c.learner_id === id).length;
 
       const real: Row[] = (profiles || []).map((p: any) => ({
         user_id: p.user_id, full_name: p.full_name, avatar_url: p.avatar_url, country: p.country,
-        trust_score: Number(p.trust_score), ratings_count: p.ratings_count, credits: p.credits,
+        trust_score: Number(p.trust_score), ratings_count: p.ratings_count,
+        credits: (myCredits || []).find((c: any) => c.user_id === p.user_id)?.credits ?? 0,
         certs: certCount(p.user_id), isMe: p.user_id === user?.id,
       }));
 

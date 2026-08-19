@@ -28,8 +28,9 @@ const Home = () => {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data: p } = await supabase.from("profiles").select("full_name,avatar_url,credits,trust_score,ratings_count").eq("user_id", user.id).maybeSingle();
-      setProfile(p as Profile | null);
+      const { data: p } = await supabase.from("profiles").select("full_name,avatar_url,trust_score,ratings_count").eq("user_id", user.id).maybeSingle();
+      const { data: c } = await supabase.from("user_credits").select("credits").eq("user_id", user.id).maybeSingle();
+      setProfile(p ? ({ ...p, credits: c?.credits ?? 0 } as Profile) : null);
       const [t, l, pi, ac, ce] = await Promise.all([
         supabase.from("skills_teach").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("skills_learn").select("id", { count: "exact", head: true }).eq("user_id", user.id),

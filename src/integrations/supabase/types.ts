@@ -88,7 +88,6 @@ export type Database = {
           city: string | null
           country: string | null
           created_at: string
-          credits: number
           full_name: string
           id: string
           ratings_count: number
@@ -102,7 +101,6 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string
-          credits?: number
           full_name: string
           id?: string
           ratings_count?: number
@@ -116,7 +114,6 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string
-          credits?: number
           full_name?: string
           id?: string
           ratings_count?: number
@@ -251,6 +248,24 @@ export type Database = {
           requester_id?: string
           status?: Database["public"]["Enums"]["swap_status"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_credits: {
+        Row: {
+          credits: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          credits?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          credits?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

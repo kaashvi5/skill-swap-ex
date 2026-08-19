@@ -62,7 +62,8 @@ const Profile = () => {
         setCountry(p.country || "");
         setCity(p.city || "");
         setAvatarUrl(p.avatar_url);
-        setCredits(p.credits);
+        const { data: c } = await supabase.from("user_credits").select("credits").eq("user_id", user.id).maybeSingle();
+        setCredits(c?.credits ?? 0);
         setTrust(Number(p.trust_score));
       }
       const { data: t } = await supabase.from("skills_teach").select("*").eq("user_id", user.id).order("created_at");
