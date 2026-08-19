@@ -221,8 +221,10 @@ export type Database = {
           id: string
           message: string | null
           offer_skill: string
+          recipient_completed: boolean
           recipient_id: string
           request_skill: string
+          requester_completed: boolean
           requester_id: string
           status: Database["public"]["Enums"]["swap_status"]
           updated_at: string
@@ -232,8 +234,10 @@ export type Database = {
           id?: string
           message?: string | null
           offer_skill: string
+          recipient_completed?: boolean
           recipient_id: string
           request_skill: string
+          requester_completed?: boolean
           requester_id: string
           status?: Database["public"]["Enums"]["swap_status"]
           updated_at?: string
@@ -243,8 +247,10 @@ export type Database = {
           id?: string
           message?: string | null
           offer_skill?: string
+          recipient_completed?: boolean
           recipient_id?: string
           request_skill?: string
+          requester_completed?: boolean
           requester_id?: string
           status?: Database["public"]["Enums"]["swap_status"]
           updated_at?: string
@@ -295,6 +301,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      confirm_swap_completion: { Args: { _swap_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
