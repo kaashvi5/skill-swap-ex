@@ -88,7 +88,6 @@ export type Database = {
           city: string | null
           country: string | null
           created_at: string
-          credits: number
           full_name: string
           id: string
           ratings_count: number
@@ -102,7 +101,6 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string
-          credits?: number
           full_name: string
           id?: string
           ratings_count?: number
@@ -116,7 +114,6 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string
-          credits?: number
           full_name?: string
           id?: string
           ratings_count?: number
@@ -254,6 +251,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_credits: {
+        Row: {
+          credits: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          credits?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          credits?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -277,42 +292,7 @@ export type Database = {
       }
     }
     Views: {
-      public_profiles: {
-        Row: {
-          avatar_url: string | null
-          bio: string | null
-          city: string | null
-          country: string | null
-          created_at: string | null
-          full_name: string | null
-          ratings_count: number | null
-          trust_score: number | null
-          user_id: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          bio?: string | null
-          city?: string | null
-          country?: string | null
-          created_at?: string | null
-          full_name?: string | null
-          ratings_count?: number | null
-          trust_score?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          bio?: string | null
-          city?: string | null
-          country?: string | null
-          created_at?: string | null
-          full_name?: string | null
-          ratings_count?: number | null
-          trust_score?: number | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       has_role: {
