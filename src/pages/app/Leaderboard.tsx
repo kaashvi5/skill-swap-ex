@@ -31,7 +31,8 @@ const Leaderboard = () => {
 
       const real: Row[] = (profiles || []).map((p: any) => ({
         user_id: p.user_id, full_name: p.full_name, avatar_url: p.avatar_url, country: p.country,
-        trust_score: Number(p.trust_score), ratings_count: p.ratings_count, credits: p.credits,
+        trust_score: Number(p.trust_score), ratings_count: p.ratings_count,
+        credits: (myCredits || []).find((c: any) => c.user_id === p.user_id)?.credits ?? 0,
         certs: certCount(p.user_id), isMe: p.user_id === user?.id,
       }));
 

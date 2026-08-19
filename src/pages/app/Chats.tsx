@@ -97,12 +97,7 @@ const Chats = () => {
     // Mark complete + transfer 1 credit from learner→teacher (we treat requester as learner of request_skill)
     const { error } = await supabase.from("swap_requests").update({ status: "completed" }).eq("id", active.id);
     if (error) { toast.error(error.message); return; }
-    // Credits: requester spends 1, recipient earns 1
-    await supabase.rpc as any;
-    const { data: rp } = await supabase.from("profiles").select("credits").eq("user_id", active.requester_id).maybeSingle();
-    const { data: rcp } = await supabase.from("profiles").select("credits").eq("user_id", active.recipient_id).maybeSingle();
-    await supabase.from("profiles").update({ credits: Math.max((rp?.credits ?? 0) - 1, 0) }).eq("user_id", active.requester_id);
-    await supabase.from("profiles").update({ credits: (rcp?.credits ?? 0) + 1 }).eq("user_id", active.recipient_id);
+    // Credits are held in a private, owner-only table and are not adjustable from the client
     // Issue certificate to requester (the learner) for request_skill
     await supabase.from("certificates").insert({
       swap_id: active.id, learner_id: active.requester_id, teacher_id: active.recipient_id, skill: active.request_skill,
