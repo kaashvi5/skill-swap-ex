@@ -24,7 +24,8 @@ const Leaderboard = () => {
 
   useEffect(() => {
     (async () => {
-      const { data: profiles } = await supabase.from("profiles").select("user_id,full_name,avatar_url,country,trust_score,ratings_count,credits");
+      const { data: profiles } = await supabase.from("profiles").select("user_id,full_name,avatar_url,country,trust_score,ratings_count");
+      const { data: myCredits } = await supabase.from("user_credits").select("user_id,credits");
       const { data: certs } = await supabase.from("certificates").select("learner_id");
       const certCount = (id: string) => (certs || []).filter((c: any) => c.learner_id === id).length;
 
