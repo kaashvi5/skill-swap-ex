@@ -1,13 +1,13 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Check, X, Send, Star, Award, ArrowLeft, Coins } from "lucide-react";
-import { DEMO_CHATS } from "@/lib/demoData";
+import { Check, X, Send, Star, Award, ArrowLeft } from "lucide-react";
 
 interface SwapRow {
   id: string;
@@ -17,12 +17,18 @@ interface SwapRow {
   request_skill: string;
   message: string | null;
   status: "pending" | "accepted" | "rejected" | "completed" | "cancelled";
+  requester_completed: boolean;
+  recipient_completed: boolean;
   created_at: string;
   updated_at: string;
   other: { user_id: string; full_name: string; avatar_url: string | null };
+  lastMessage?: { body: string; created_at: string };
+  unread: number;
 }
 
 interface Msg { id: string; sender_id: string; body: string; created_at: string; }
+
+const lastReadKey = (swapId: string) => `ss-read-${swapId}`;
 
 const Chats = () => {
   const { user } = useAuth();
@@ -37,39 +43,67 @@ const Chats = () => {
   const [stars, setStars] = useState(5);
   const [comment, setComment] = useState("");
 
-  const loadSwaps = async () => {
+  const loadSwaps = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
-      .from("swap_requests")
-      .select("*")
+      .from("swap_requests").select("*")
       .or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`)
       .order("updated_at", { ascending: false });
-    if (!data) return;
+    if (!data) { setLoading(false); return; }
+
     const otherIds = Array.from(new Set(data.map((s: any) => s.requester_id === user.id ? s.recipient_id : s.requester_id)));
-    const { data: profiles } = await supabase.from("profiles").select("user_id,full_name,avatar_url").in("user_id", otherIds);
+    const swapIds = data.map((s: any) => s.id);
+    const [{ data: profiles }, { data: msgs }] = await Promise.all([
+      otherIds.length ? supabase.from("profiles").select("user_id,full_name,avatar_url").in("user_id", otherIds) : Promise.resolve({ data: [] as any[] }),
+      swapIds.length ? supabase.from("messages").select("swap_id,sender_id,body,created_at").in("swap_id", swapIds).order("created_at") : Promise.resolve({ data: [] as any[] }),
+    ]);
+
     const rows: SwapRow[] = data.map((s: any) => {
       const otherId = s.requester_id === user.id ? s.recipient_id : s.requester_id;
       const other = (profiles || []).find((p: any) => p.user_id === otherId) || { user_id: otherId, full_name: "User", avatar_url: null };
-      return { ...s, other };
+      const mine = (msgs || []).filter((m: any) => m.swap_id === s.id);
+      const last = mine[mine.length - 1];
+      const lastRead = localStorage.getItem(lastReadKey(s.id));
+      const unread = mine.filter((m: any) => m.sender_id !== user.id && (!lastRead || new Date(m.created_at) > new Date(lastRead))).length;
+      return { ...s, other, lastMessage: last ? { body: last.body, created_at: last.created_at } : undefined, unread };
+    });
+
+    rows.sort((a, b) => {
+      const at = a.lastMessage?.created_at || a.updated_at;
+      const bt = b.lastMessage?.created_at || b.updated_at;
+      return +new Date(bt) - +new Date(at);
     });
     setSwaps(rows);
     setLoading(false);
-  };
+  }, [user]);
 
-  useEffect(() => { loadSwaps(); }, [user]);
+  useEffect(() => { loadSwaps(); }, [loadSwaps]);
+
+  // Live updates for the conversation list
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel("chat-list")
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => loadSwaps())
+      .on("postgres_changes", { event: "*", schema: "public", table: "swap_requests" }, () => loadSwaps())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user, loadSwaps]);
 
   useEffect(() => {
     if (!active) return;
     (async () => {
       const { data } = await supabase.from("messages").select("*").eq("swap_id", active.id).order("created_at");
       setMessages((data as Msg[]) || []);
+      localStorage.setItem(lastReadKey(active.id), new Date().toISOString());
       setTimeout(() => scrollRef.current?.scrollTo({ top: 999999, behavior: "smooth" }), 50);
     })();
     const ch = supabase
       .channel(`msgs-${active.id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `swap_id=eq.${active.id}` },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as Msg]);
+          setMessages((prev) => prev.some((m) => m.id === (payload.new as Msg).id) ? prev : [...prev, payload.new as Msg]);
+          localStorage.setItem(lastReadKey(active.id), new Date().toISOString());
           setTimeout(() => scrollRef.current?.scrollTo({ top: 999999, behavior: "smooth" }), 50);
         })
       .subscribe();
@@ -80,6 +114,7 @@ const Chats = () => {
     const { error } = await supabase.from("swap_requests").update({ status }).eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success(status === "accepted" ? "Swap accepted! Start chatting." : "Request declined");
+    setActive((a) => (a && a.id === id ? { ...a, status } : a));
     loadSwaps();
   };
 
@@ -93,19 +128,18 @@ const Chats = () => {
 
   const completeSwap = async () => {
     if (!user || !active) return;
-    const otherId = active.requester_id === user.id ? active.recipient_id : active.requester_id;
-    // Mark complete + transfer 1 credit from learner→teacher (we treat requester as learner of request_skill)
-    const { error } = await supabase.from("swap_requests").update({ status: "completed" }).eq("id", active.id);
+    const { data, error } = await supabase.rpc("confirm_swap_completion", { _swap_id: active.id });
     if (error) { toast.error(error.message); return; }
-    // Credits are held in a private, owner-only table and are not adjustable from the client
-    // Issue certificate to requester (the learner) for request_skill
-    await supabase.from("certificates").insert({
-      swap_id: active.id, learner_id: active.requester_id, teacher_id: active.recipient_id, skill: active.request_skill,
-    });
-    toast.success("Session completed! Credit transferred 🎉");
-    setActive({ ...active, status: "completed" });
+    if (data === "completed") {
+      toast.success("Swap completed! Credit transferred and certificate issued 🎉");
+      setActive({ ...active, status: "completed" });
+      setRateOpen(true);
+    } else {
+      toast.success("Marked complete — waiting for the other person to confirm.");
+      const mine = active.requester_id === user.id ? { requester_completed: true } : { recipient_completed: true };
+      setActive({ ...active, ...mine });
+    }
     loadSwaps();
-    setRateOpen(true);
   };
 
   const submitRating = async () => {
@@ -120,11 +154,15 @@ const Chats = () => {
     setComment("");
   };
 
+  const iConfirmed = active && user
+    ? (active.requester_id === user.id ? active.requester_completed : active.recipient_completed)
+    : false;
+
   if (active) {
     return (
       <div className="max-w-3xl mx-auto h-[calc(100vh-12rem)] flex flex-col rounded-3xl border bg-card shadow-card overflow-hidden">
         <div className="flex items-center gap-3 p-4 border-b">
-          <Button size="icon" variant="ghost" onClick={() => setActive(null)}><ArrowLeft className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => { setActive(null); loadSwaps(); }}><ArrowLeft className="h-4 w-4" /></Button>
           <div className="h-10 w-10 rounded-full overflow-hidden bg-secondary">
             {active.other.avatar_url ? <img src={active.other.avatar_url} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center font-bold">{active.other.full_name[0]}</div>}
           </div>
@@ -156,14 +194,16 @@ const Chats = () => {
                 <div key={m.id} className={`flex ${m.sender_id === user?.id ? "justify-end" : "justify-start"}`}>
                   <div className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm ${m.sender_id === user?.id ? "gradient-primary text-primary-foreground rounded-br-sm" : "bg-secondary rounded-bl-sm"}`}>
                     {m.body}
+                    <div className="text-[10px] opacity-70 mt-1">{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
                   </div>
                 </div>
               ))}
             </div>
             <div className="border-t p-3 flex flex-col gap-2">
               {active.status === "accepted" && (
-                <Button onClick={completeSwap} variant="outline" className="rounded-full text-success border-success/30 hover:bg-success/10">
-                  <Award className="h-4 w-4 mr-1" />Mark session complete (transfer credit)
+                <Button onClick={completeSwap} disabled={iConfirmed} variant="outline" className="rounded-full text-success border-success/30 hover:bg-success/10">
+                  <Award className="h-4 w-4 mr-1" />
+                  {iConfirmed ? "Waiting for the other person to confirm" : "Mark swap as complete"}
                 </Button>
               )}
               {active.status === "completed" && (
@@ -172,7 +212,7 @@ const Chats = () => {
                 </Button>
               )}
               <div className="flex gap-2">
-                <Input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendMsg()} placeholder="Type a message..." disabled={active.status === "completed"} maxLength={500} className="rounded-full" />
+                <Input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendMsg()} placeholder="Type a message..." maxLength={500} className="rounded-full" />
                 <Button onClick={sendMsg} disabled={!text.trim()} className="rounded-full gradient-primary text-primary-foreground border-0"><Send className="h-4 w-4" /></Button>
               </div>
             </div>
@@ -209,6 +249,13 @@ const Chats = () => {
       </div>
       {loading ? (
         <div className="text-center py-20 text-muted-foreground">Loading...</div>
+      ) : swaps.length === 0 ? (
+        <div className="rounded-3xl border bg-card p-12 text-center">
+          <p className="text-muted-foreground mb-4">No conversations yet. Send a swap request to start one.</p>
+          <Button asChild className="rounded-full gradient-primary text-primary-foreground border-0">
+            <Link to="/app/matches">Find a match</Link>
+          </Button>
+        </div>
       ) : (
         <div className="space-y-3">
           {swaps.map((s) => (
@@ -219,10 +266,11 @@ const Chats = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-display font-bold truncate">{s.other.full_name}</span>
-                  {s.status === "pending" && s.recipient_id === user?.id && <span className="text-[10px] px-2 py-0.5 rounded-full gradient-accent text-accent-foreground font-bold">NEW</span>}
+                  {s.unread > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full gradient-accent text-accent-foreground font-bold">{s.unread} NEW</span>}
+                  {s.status === "pending" && s.recipient_id === user?.id && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">REQUEST</span>}
                 </div>
                 <div className="text-sm text-muted-foreground truncate">
-                  {s.requester_id === user?.id ? "You want " : "They want "}<span className="font-semibold text-foreground">{s.requester_id === user?.id ? s.request_skill : s.offer_skill}</span> ↔ <span className="font-semibold text-foreground">{s.requester_id === user?.id ? s.offer_skill : s.request_skill}</span>
+                  {s.lastMessage ? s.lastMessage.body : `${s.request_skill} ↔ ${s.offer_skill}`}
                 </div>
               </div>
               <span className={`text-xs px-3 py-1 rounded-full capitalize shrink-0 ${
@@ -233,62 +281,9 @@ const Chats = () => {
               }`}>{s.status}</span>
             </button>
           ))}
-
-          {DEMO_CHATS.map((c) => (
-            <DemoChatRow key={c.id} chat={c} />
-          ))}
         </div>
       )}
     </div>
-  );
-};
-
-const DemoChatRow = ({ chat }: { chat: typeof DEMO_CHATS[number] }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button onClick={() => setOpen(true)} className="w-full text-left rounded-3xl border bg-card p-5 hover:shadow-card shadow-soft transition-smooth flex items-center gap-4">
-        <div className="h-12 w-12 rounded-full overflow-hidden bg-secondary shrink-0">
-          <img src={chat.other.avatar_url} alt="" className="h-full w-full object-cover" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-display font-bold truncate">{chat.other.full_name}</span>
-            {chat.unread > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full gradient-accent text-accent-foreground font-bold">{chat.unread} NEW</span>}
-          </div>
-          <div className="text-sm text-muted-foreground truncate">{chat.preview}</div>
-        </div>
-        <span className={`text-xs px-3 py-1 rounded-full capitalize shrink-0 ${
-          chat.status === "accepted" ? "bg-success/10 text-success" :
-          chat.status === "completed" ? "bg-primary/10 text-primary" :
-          "bg-accent/10 text-accent"
-        }`}>{chat.status}</span>
-      </button>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <img src={chat.other.avatar_url} alt="" className="h-10 w-10 rounded-full" />
-              <div>
-                <div>{chat.other.full_name}</div>
-                <div className="text-xs font-normal text-muted-foreground">{chat.request_skill} ↔ {chat.offer_skill}</div>
-              </div>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 max-h-96 overflow-y-auto py-2">
-            {chat.messages.map((m, i) => (
-              <div key={i} className={`flex ${m.sender === "me" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm ${m.sender === "me" ? "gradient-primary text-primary-foreground rounded-br-sm" : "bg-secondary rounded-bl-sm"}`}>
-                  {m.body}
-                  <div className="text-[10px] opacity-70 mt-1">{m.time}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
   );
 };
 
