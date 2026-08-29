@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Award, Download } from "lucide-react";
 import jsPDF from "jspdf";
-import { DEMO_CERTS } from "@/lib/demoData";
 
 interface Cert {
   id: string;
@@ -30,19 +30,13 @@ const Certificates = () => {
       const teacherIds = Array.from(new Set((data || []).map((c: any) => c.teacher_id)));
       const { data: profs } = await supabase.from("profiles").select("user_id,full_name").in("user_id", [...teacherIds, user.id]);
       const me = profs?.find((p: any) => p.user_id === user.id);
-      const mapped: Cert[] = (data || []).map((c: any) => ({
+      setCerts((data || []).map((c: any) => ({
         id: c.id,
         skill: c.skill,
         issued_at: c.issued_at,
         teacher: { full_name: profs?.find((p: any) => p.user_id === c.teacher_id)?.full_name || "Teacher" },
         learner: { full_name: me?.full_name || "Learner" },
-      }));
-      const learnerName = me?.full_name || "Learner";
-      const demoMapped: Cert[] = DEMO_CERTS.map((d) => ({
-        id: d.id, skill: d.skill, issued_at: d.issued_at,
-        teacher: { full_name: d.teacher }, learner: { full_name: learnerName },
-      }));
-      setCerts([...mapped, ...demoMapped]);
+      })));
       setLoading(false);
     })();
   }, [user]);
@@ -51,17 +45,14 @@ const Certificates = () => {
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
     const w = doc.internal.pageSize.getWidth();
     const h = doc.internal.pageSize.getHeight();
-    // Background
     doc.setFillColor(248, 250, 255);
     doc.rect(0, 0, w, h, "F");
-    // Border
     doc.setDrawColor(33, 110, 235);
     doc.setLineWidth(6);
     doc.rect(24, 24, w - 48, h - 48);
     doc.setLineWidth(1);
     doc.setDrawColor(245, 130, 32);
     doc.rect(36, 36, w - 72, h - 72);
-    // Title
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
     doc.setTextColor(245, 130, 32);
@@ -73,12 +64,10 @@ const Certificates = () => {
     doc.setFontSize(13);
     doc.setTextColor(110, 120, 140);
     doc.text("This certificate is proudly presented to", w / 2, 180, { align: "center" });
-    // Name
     doc.setFont("helvetica", "bold");
     doc.setFontSize(34);
     doc.setTextColor(20, 30, 60);
     doc.text(c.learner.full_name, w / 2, 230, { align: "center" });
-    // Skill
     doc.setFont("helvetica", "normal");
     doc.setFontSize(14);
     doc.setTextColor(110, 120, 140);
@@ -87,12 +76,10 @@ const Certificates = () => {
     doc.setFontSize(28);
     doc.setTextColor(33, 110, 235);
     doc.text(c.skill, w / 2, 315, { align: "center" });
-    // Teacher
     doc.setFont("helvetica", "normal");
     doc.setFontSize(13);
     doc.setTextColor(110, 120, 140);
     doc.text(`Taught by ${c.teacher.full_name}`, w / 2, 350, { align: "center" });
-    // Footer
     const date = new Date(c.issued_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
     doc.setFontSize(11);
     doc.text(`Issued on ${date}`, w / 2, h - 90, { align: "center" });
@@ -106,10 +93,18 @@ const Certificates = () => {
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="font-display text-4xl font-bold tracking-tight mb-2">Your Certificates</h1>
-        <p className="text-muted-foreground">Proof of every skill you've learned through SkillSwap.</p>
+        <p className="text-muted-foreground">Issued automatically when a swap is completed by both people.</p>
       </div>
       {loading ? (
         <div className="text-center py-20 text-muted-foreground">Loading...</div>
+      ) : certs.length === 0 ? (
+        <div className="rounded-3xl border bg-card p-12 text-center">
+          <Award className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-muted-foreground mb-4">No certificates yet — complete a swap to earn your first one.</p>
+          <Button asChild className="rounded-full gradient-primary text-primary-foreground border-0">
+            <Link to="/app/exchanges">View my swaps</Link>
+          </Button>
+        </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-5">
           {certs.map((c) => (
