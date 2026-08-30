@@ -1,7 +1,7 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Home, Users, MessageCircle, User, LogOut, Award, Sparkles, Repeat, Trophy } from "lucide-react";
+import { Home, Users, MessageCircle, User, LogOut, Award, Sparkles, Repeat, Trophy, History as HistoryIcon } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 export const AppLayout = ({ children }: { children: React.ReactNode }) => {
@@ -19,6 +19,7 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
     { to: "/app/matches", icon: Sparkles, label: "Matches" },
     { to: "/app/exchanges", icon: Repeat, label: "Swaps" },
     { to: "/app/chats", icon: MessageCircle, label: "Chats" },
+    { to: "/app/history", icon: HistoryIcon, label: "History" },
     { to: "/app/leaderboard", icon: Trophy, label: "Ranks" },
     { to: "/app/certificates", icon: Award, label: "Certs" },
     { to: "/app/profile", icon: User, label: "Profile" },

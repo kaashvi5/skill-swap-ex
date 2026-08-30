@@ -16,6 +16,7 @@ import Certificates from "./pages/app/Certificates";
 import Matches from "./pages/app/Matches";
 import Exchanges from "./pages/app/Exchanges";
 import Leaderboard from "./pages/app/Leaderboard";
+import History from "./pages/app/History";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,10 @@ const App = () => (
           <Route
             path="/app/leaderboard"
             element={<ProtectedRoute><AppLayout><Leaderboard /></AppLayout></ProtectedRoute>}
+          />
+          <Route
+            path="/app/history"
+            element={<ProtectedRoute><AppLayout><History /></AppLayout></ProtectedRoute>}
           />
           <Route path="*" element={<NotFound />} />
         </Routes>
