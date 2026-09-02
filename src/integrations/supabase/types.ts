@@ -215,6 +215,41 @@ export type Database = {
         }
         Relationships: []
       }
+      swap_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          detail: Json
+          event_type: string
+          id: string
+          swap_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          event_type: string
+          id?: string
+          swap_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          event_type?: string
+          id?: string
+          swap_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "swap_events_swap_id_fkey"
+            columns: ["swap_id"]
+            isOneToOne: false
+            referencedRelation: "swap_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       swap_requests: {
         Row: {
           created_at: string
@@ -256,6 +291,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      swap_sessions: {
+        Row: {
+          created_at: string
+          duration_minutes: number
+          id: string
+          note: string | null
+          proposed_by: string
+          starts_at: string
+          status: Database["public"]["Enums"]["session_status"]
+          swap_id: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          note?: string | null
+          proposed_by: string
+          starts_at: string
+          status?: Database["public"]["Enums"]["session_status"]
+          swap_id: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          note?: string | null
+          proposed_by?: string
+          starts_at?: string
+          status?: Database["public"]["Enums"]["session_status"]
+          swap_id?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "swap_sessions_swap_id_fkey"
+            columns: ["swap_id"]
+            isOneToOne: false
+            referencedRelation: "swap_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_credits: {
         Row: {
@@ -309,9 +391,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      session_conflict_count: {
+        Args: {
+          _duration: number
+          _exclude?: string
+          _starts_at: string
+          _swap_id: string
+        }
+        Returns: number
+      }
     }
     Enums: {
       app_role: "admin" | "user"
+      session_status: "proposed" | "confirmed" | "declined" | "cancelled"
       skill_level: "beginner" | "intermediate" | "expert"
       swap_status:
         | "pending"
@@ -447,6 +539,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      session_status: ["proposed", "confirmed", "declined", "cancelled"],
       skill_level: ["beginner", "intermediate", "expert"],
       swap_status: [
         "pending",
