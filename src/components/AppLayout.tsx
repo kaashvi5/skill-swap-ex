@@ -62,7 +62,10 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </header>
 
+      {user && <UpcomingSessionBanner />}
+
       <main className="container py-8 animate-fade-in">{children}</main>
+
 
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur-xl">
