@@ -53,14 +53,18 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
               </NavLink>
             ))}
           </nav>
-          {user && (
-            <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2">
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Sign out</span>
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            {user && (
+              <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2">
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign out</span>
+              </Button>
+            )}
+          </div>
         </div>
       </header>
+
 
       {user && <UpcomingSessionBanner />}
 
