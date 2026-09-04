@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Check, X, Send, Star, Award, ArrowLeft } from "lucide-react";
+import { SessionScheduler } from "@/components/SessionScheduler";
+import { SwapTimeline } from "@/components/SwapTimeline";
 
 interface SwapRow {
   id: string;
@@ -189,6 +191,13 @@ const Chats = () => {
         ) : (
           <>
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+              <SessionScheduler
+                swapId={active.id}
+                partnerName={active.other.full_name}
+                skillTitle={`${active.request_skill} ↔ ${active.offer_skill}`}
+                canPropose={active.status === "accepted"}
+              />
+              <SwapTimeline swapId={active.id} />
               {messages.length === 0 && <p className="text-center text-muted-foreground text-sm">Say hello 👋</p>}
               {messages.map((m) => (
                 <div key={m.id} className={`flex ${m.sender_id === user?.id ? "justify-end" : "justify-start"}`}>

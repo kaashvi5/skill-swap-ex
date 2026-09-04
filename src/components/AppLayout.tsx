@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Home, Users, MessageCircle, User, LogOut, Award, Sparkles, Repeat, Trophy, History as HistoryIcon } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { UpcomingSessionBanner } from "@/components/UpcomingSessionBanner";
 
 export const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, signOut } = useAuth();
