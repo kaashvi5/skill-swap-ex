@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Award, Coins, History as HistoryIcon, Star, ArrowRight } from "lucide-react";
+import { SessionCalendarButtons, SwapSession } from "@/components/SessionScheduler";
+import { formatInZone, localTimezone } from "@/lib/timezone";
 
 interface Row {
   id: string;
@@ -17,6 +19,7 @@ interface Row {
   creditDelta: number;
   certificate: boolean;
   myStars: number | null;
+  sessions: SwapSession[];
 }
 
 const History = () => {
@@ -43,7 +46,7 @@ const History = () => {
       );
       const swapIds = list.map((s: any) => s.id);
 
-      const [{ data: profs }, { data: certs }, { data: ratings }] = await Promise.all([
+      const [{ data: profs }, { data: certs }, { data: ratings }, { data: sessions }] = await Promise.all([
         partnerIds.length
           ? supabase.from("profiles").select("user_id,full_name").in("user_id", partnerIds)
           : Promise.resolve({ data: [] as any[] }),
@@ -52,6 +55,9 @@ const History = () => {
           : Promise.resolve({ data: [] as any[] }),
         swapIds.length
           ? supabase.from("ratings").select("swap_id,rater_id,stars").in("swap_id", swapIds)
+          : Promise.resolve({ data: [] as any[] }),
+        swapIds.length
+          ? supabase.from("swap_sessions").select("*").in("swap_id", swapIds).eq("status", "confirmed").order("starts_at")
           : Promise.resolve({ data: [] as any[] }),
       ]);
 
@@ -70,6 +76,7 @@ const History = () => {
             creditDelta: isRequester ? -1 : 1,
             certificate: (certs || []).some((c: any) => c.swap_id === s.id && c.learner_id === user.id),
             myStars: (ratings || []).find((r: any) => r.swap_id === s.id && r.rater_id === user.id)?.stars ?? null,
+            sessions: ((sessions || []) as any[]).filter((ss) => ss.swap_id === s.id) as SwapSession[],
           };
         })
       );
@@ -151,31 +158,51 @@ const History = () => {
       ) : (
         <div className="space-y-3">
           {filtered.map((r) => (
-            <div key={r.id} className="rounded-3xl border bg-card p-5 shadow-soft flex flex-wrap items-center gap-4">
-              <div className="flex-1 min-w-[220px]">
-                <div className="font-display text-lg font-bold">{r.partner}</div>
-                <div className="text-sm text-muted-foreground">
-                  You taught <span className="font-semibold text-foreground">{r.taught}</span> · you learned{" "}
-                  <span className="font-semibold text-foreground">{r.learned}</span>
+            <div key={r.id} className="rounded-3xl border bg-card p-5 shadow-soft space-y-3">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex-1 min-w-[220px]">
+                  <div className="font-display text-lg font-bold">{r.partner}</div>
+                  <div className="text-sm text-muted-foreground">
+                    You taught <span className="font-semibold text-foreground">{r.taught}</span> · you learned{" "}
+                    <span className="font-semibold text-foreground">{r.learned}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">{new Date(r.date).toLocaleDateString()}</div>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">{new Date(r.date).toLocaleDateString()}</div>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {r.myStars !== null && (
-                  <span className="text-xs px-3 py-1 rounded-full bg-secondary flex items-center gap-1">
-                    <Star className="h-3 w-3 fill-accent text-accent" />You rated {r.myStars}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {r.myStars !== null && (
+                    <span className="text-xs px-3 py-1 rounded-full bg-secondary flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-accent text-accent" />You rated {r.myStars}
+                    </span>
+                  )}
+                  <span className={`text-xs px-3 py-1 rounded-full font-semibold ${r.creditDelta > 0 ? "bg-success/10 text-success" : "bg-secondary text-muted-foreground"}`}>
+                    {r.creditDelta > 0 ? "+1 credit" : "-1 credit"}
                   </span>
-                )}
-                <span className={`text-xs px-3 py-1 rounded-full font-semibold ${r.creditDelta > 0 ? "bg-success/10 text-success" : "bg-secondary text-muted-foreground"}`}>
-                  {r.creditDelta > 0 ? "+1 credit" : "-1 credit"}
-                </span>
-                {r.certificate && (
-                  <Button asChild size="sm" variant="outline" className="rounded-full">
-                    <Link to="/app/certificates"><Award className="h-3.5 w-3.5 mr-1" />Certificate</Link>
-                  </Button>
-                )}
+                  {r.certificate && (
+                    <Button asChild size="sm" variant="outline" className="rounded-full">
+                      <Link to="/app/certificates"><Award className="h-3.5 w-3.5 mr-1" />Certificate</Link>
+                    </Button>
+                  )}
+                </div>
               </div>
+
+              {r.sessions.length > 0 && (
+                <div className="rounded-2xl bg-secondary/40 p-3 space-y-2">
+                  {r.sessions.map((s) => (
+                    <div key={s.id} className="flex flex-wrap items-center gap-3 justify-between">
+                      <div className="text-xs text-muted-foreground">
+                        Session · {formatInZone(s.starts_at, localTimezone())} · {s.duration_minutes} min
+                      </div>
+                      <SessionCalendarButtons
+                        session={s}
+                        title={`${r.learned} with ${r.partner}`}
+                        partner={r.partner}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
           ))}
         </div>
       )}
