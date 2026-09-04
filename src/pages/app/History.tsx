@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Award, Coins, History as HistoryIcon, Star, ArrowRight } from "lucide-react";
+import { SessionCalendarButtons, SwapSession } from "@/components/SessionScheduler";
+import { formatInZone, localTimezone } from "@/lib/timezone";
 
 interface Row {
   id: string;
@@ -17,6 +19,7 @@ interface Row {
   creditDelta: number;
   certificate: boolean;
   myStars: number | null;
+  sessions: SwapSession[];
 }
 
 const History = () => {
