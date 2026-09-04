@@ -46,7 +46,7 @@ const History = () => {
       );
       const swapIds = list.map((s: any) => s.id);
 
-      const [{ data: profs }, { data: certs }, { data: ratings }] = await Promise.all([
+      const [{ data: profs }, { data: certs }, { data: ratings }, { data: sessions }] = await Promise.all([
         partnerIds.length
           ? supabase.from("profiles").select("user_id,full_name").in("user_id", partnerIds)
           : Promise.resolve({ data: [] as any[] }),
@@ -55,6 +55,9 @@ const History = () => {
           : Promise.resolve({ data: [] as any[] }),
         swapIds.length
           ? supabase.from("ratings").select("swap_id,rater_id,stars").in("swap_id", swapIds)
+          : Promise.resolve({ data: [] as any[] }),
+        swapIds.length
+          ? supabase.from("swap_sessions").select("*").in("swap_id", swapIds).eq("status", "confirmed").order("starts_at")
           : Promise.resolve({ data: [] as any[] }),
       ]);
 
@@ -73,6 +76,7 @@ const History = () => {
             creditDelta: isRequester ? -1 : 1,
             certificate: (certs || []).some((c: any) => c.swap_id === s.id && c.learner_id === user.id),
             myStars: (ratings || []).find((r: any) => r.swap_id === s.id && r.rater_id === user.id)?.stars ?? null,
+            sessions: ((sessions || []) as any[]).filter((ss) => ss.swap_id === s.id) as SwapSession[],
           };
         })
       );
