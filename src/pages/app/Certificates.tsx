@@ -3,21 +3,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Award, Download } from "lucide-react";
-import jsPDF from "jspdf";
-
-interface Cert {
-  id: string;
-  skill: string;
-  issued_at: string;
-  teacher: { full_name: string };
-  learner: { full_name: string };
-}
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Award, Download, Eye, Share2, BadgeCheck } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { CertificateData, certificateBlob, downloadCertificate } from "@/lib/certificate";
 
 const Certificates = () => {
   const { user } = useAuth();
-  const [certs, setCerts] = useState<Cert[]>([]);
+  const [certs, setCerts] = useState<CertificateData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [preview, setPreview] = useState<CertificateData | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -27,74 +22,49 @@ const Certificates = () => {
         .select("*")
         .eq("learner_id", user.id)
         .order("issued_at", { ascending: false });
-      const teacherIds = Array.from(new Set((data || []).map((c: any) => c.teacher_id)));
-      const { data: profs } = await supabase.from("profiles").select("user_id,full_name").in("user_id", [...teacherIds, user.id]);
-      const me = profs?.find((p: any) => p.user_id === user.id);
-      setCerts((data || []).map((c: any) => ({
-        id: c.id,
-        skill: c.skill,
-        issued_at: c.issued_at,
-        teacher: { full_name: profs?.find((p: any) => p.user_id === c.teacher_id)?.full_name || "Teacher" },
-        learner: { full_name: me?.full_name || "Learner" },
-      })));
+      const teacherIds = Array.from(new Set((data || []).map((c) => c.teacher_id)));
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id,full_name")
+        .in("user_id", [...teacherIds, user.id]);
+      const me = profs?.find((p) => p.user_id === user.id);
+      setCerts(
+        (data || []).map((c) => ({
+          id: c.id,
+          skill: c.skill,
+          issued_at: c.issued_at,
+          teacherName: profs?.find((p) => p.user_id === c.teacher_id)?.full_name || "Teacher",
+          learnerName: me?.full_name || "Learner",
+        }))
+      );
       setLoading(false);
     })();
   }, [user]);
 
-  const download = (c: Cert) => {
-    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
-    const w = doc.internal.pageSize.getWidth();
-    const h = doc.internal.pageSize.getHeight();
-    doc.setFillColor(248, 250, 255);
-    doc.rect(0, 0, w, h, "F");
-    doc.setDrawColor(33, 110, 235);
-    doc.setLineWidth(6);
-    doc.rect(24, 24, w - 48, h - 48);
-    doc.setLineWidth(1);
-    doc.setDrawColor(245, 130, 32);
-    doc.rect(36, 36, w - 72, h - 72);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.setTextColor(245, 130, 32);
-    doc.text("SKILLSWAP", w / 2, 90, { align: "center" });
-    doc.setFontSize(36);
-    doc.setTextColor(20, 30, 60);
-    doc.text("Certificate of Completion", w / 2, 140, { align: "center" });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(13);
-    doc.setTextColor(110, 120, 140);
-    doc.text("This certificate is proudly presented to", w / 2, 180, { align: "center" });
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(34);
-    doc.setTextColor(20, 30, 60);
-    doc.text(c.learner.full_name, w / 2, 230, { align: "center" });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(14);
-    doc.setTextColor(110, 120, 140);
-    doc.text("for successfully learning the skill of", w / 2, 270, { align: "center" });
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(28);
-    doc.setTextColor(33, 110, 235);
-    doc.text(c.skill, w / 2, 315, { align: "center" });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(13);
-    doc.setTextColor(110, 120, 140);
-    doc.text(`Taught by ${c.teacher.full_name}`, w / 2, 350, { align: "center" });
-    const date = new Date(c.issued_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-    doc.setFontSize(11);
-    doc.text(`Issued on ${date}`, w / 2, h - 90, { align: "center" });
-    doc.setFontSize(9);
-    doc.setTextColor(160, 170, 190);
-    doc.text(`Certificate ID: ${c.id}`, w / 2, h - 70, { align: "center" });
-    doc.save(`SkillSwap-${c.skill.replace(/\s+/g, "-")}.pdf`);
+  const share = async (c: CertificateData) => {
+    try {
+      const file = new File([certificateBlob(c)], `SkillSwap-${c.skill}.pdf`, { type: "application/pdf" });
+      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+      if (nav.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `My SkillSwap certificate in ${c.skill}` });
+        return;
+      }
+      downloadCertificate(c);
+      toast({ title: "Certificate saved", description: "Sharing isn't supported here, so we downloaded it instead." });
+    } catch {
+      /* user cancelled */
+    }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       <div>
         <h1 className="font-display text-4xl font-bold tracking-tight mb-2">Your Certificates</h1>
-        <p className="text-muted-foreground">Issued automatically when a swap is completed by both people.</p>
+        <p className="text-muted-foreground">
+          Issued automatically when both people confirm a completed swap.
+        </p>
       </div>
+
       {loading ? (
         <div className="text-center py-20 text-muted-foreground">Loading...</div>
       ) : certs.length === 0 ? (
@@ -106,24 +76,73 @@ const Certificates = () => {
           </Button>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-5">
+        <div className="grid md:grid-cols-2 gap-6">
           {certs.map((c) => (
-            <div key={c.id} className="rounded-3xl border bg-card p-6 shadow-soft hover:shadow-card transition-smooth">
-              <div className="h-12 w-12 rounded-2xl gradient-accent text-accent-foreground flex items-center justify-center mb-4">
-                <Award className="h-6 w-6" />
+            <div key={c.id} className="rounded-3xl border bg-card overflow-hidden shadow-soft hover:shadow-card transition-smooth">
+              <CertificatePreview c={c} compact />
+              <div className="p-5 flex flex-wrap gap-2">
+                <Button onClick={() => downloadCertificate(c)} className="rounded-full gradient-primary text-primary-foreground border-0">
+                  <Download className="h-4 w-4 mr-1" />Download PDF
+                </Button>
+                <Button variant="outline" className="rounded-full" onClick={() => setPreview(c)}>
+                  <Eye className="h-4 w-4 mr-1" />Preview
+                </Button>
+                <Button variant="ghost" className="rounded-full" onClick={() => share(c)}>
+                  <Share2 className="h-4 w-4 mr-1" />Share
+                </Button>
               </div>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Skill mastered</div>
-              <div className="font-display text-2xl font-bold mb-1">{c.skill}</div>
-              <div className="text-sm text-muted-foreground mb-4">Taught by <span className="font-semibold text-foreground">{c.teacher.full_name}</span> · {new Date(c.issued_at).toLocaleDateString()}</div>
-              <Button onClick={() => download(c)} className="rounded-full gradient-primary text-primary-foreground border-0">
-                <Download className="h-4 w-4 mr-1" />Download PDF
-              </Button>
             </div>
           ))}
         </div>
       )}
+
+      <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Certificate preview</DialogTitle>
+          </DialogHeader>
+          {preview && (
+            <div className="space-y-4">
+              <CertificatePreview c={preview} />
+              <Button
+                onClick={() => downloadCertificate(preview)}
+                className="rounded-full w-full gradient-primary text-primary-foreground border-0"
+              >
+                <Download className="h-4 w-4 mr-1" />Download PDF
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
+
+const CertificatePreview = ({ c, compact }: { c: CertificateData; compact?: boolean }) => (
+  <div className="relative bg-[hsl(210_40%_99%)] dark:bg-[hsl(222_47%_13%)] border-y">
+    <div className="h-1.5 gradient-hero" />
+    <div className={`m-3 rounded-2xl border-2 border-primary/40 ${compact ? "p-5" : "p-8"} text-center relative`}>
+      <div className="absolute inset-1.5 rounded-xl border border-accent/40 pointer-events-none" />
+      <div className="text-[10px] tracking-[0.35em] font-bold text-accent mb-2">SKILLSWAP</div>
+      <div className={`font-display font-bold text-foreground ${compact ? "text-xl" : "text-3xl"}`}>
+        Certificate of Completion
+      </div>
+      <div className="text-xs text-muted-foreground mt-3">This certificate is proudly presented to</div>
+      <div className={`font-display font-bold text-foreground mt-1 ${compact ? "text-2xl" : "text-4xl"}`}>
+        {c.learnerName}
+      </div>
+      <div className="mx-auto mt-2 h-px w-40 bg-primary/50" />
+      <div className="text-xs text-muted-foreground mt-3">for successfully learning the skill of</div>
+      <div className={`font-bold text-primary tracking-wide ${compact ? "text-lg" : "text-2xl"}`}>
+        {c.skill.toUpperCase()}
+      </div>
+      <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+        <BadgeCheck className="h-4 w-4 text-accent" />
+        Taught by <span className="font-semibold text-foreground">{c.teacherName}</span> ·{" "}
+        {new Date(c.issued_at).toLocaleDateString()}
+      </div>
+    </div>
+  </div>
+);
 
 export default Certificates;
