@@ -151,8 +151,8 @@ export const buildCertificatePdf = (c: CertificateData) => {
   // Footer id
   doc.setFontSize(8.5);
   doc.setTextColor(160, 170, 190);
-  doc.text(`Certificate ID: ${c.id}`, w / 2, h - 60, { align: "center" });
-  doc.text("skillswap · trade skills, not money", w / 2, h - 46, { align: "center" });
+  doc.text(`Certificate ID: ${c.id}`, w / 2, h - 74, { align: "center" });
+  doc.text("skillswap · trade skills, not money", w / 2, h - 62, { align: "center" });
 
   return doc;
 };
