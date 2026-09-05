@@ -4,6 +4,7 @@ import { ArrowRight, Sparkles, Globe2, Shield, Coins, Brain, MessagesSquare } fr
 import logo from "@/assets/logo.png";
 import hero from "@/assets/hero.jpg";
 import { useAuth } from "@/hooks/useAuth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Landing = () => {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ const Landing = () => {
           </span>
         </Link>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {user ? (
             <Button asChild className="rounded-full">
               <Link to="/app">Open app <ArrowRight className="ml-1 h-4 w-4" /></Link>
