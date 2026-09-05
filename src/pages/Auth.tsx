@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Check, X, Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const passwordChecks = [
   { label: "At least 8 characters", test: (v: string) => v.length >= 8 },
@@ -84,11 +85,12 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen gradient-soft flex flex-col">
-      <header className="container flex h-20 items-center">
+      <header className="container flex h-20 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
           <img src={logo} alt="SkillSwap" className="h-10 w-10" width={40} height={40} />
           <span className="font-display text-2xl font-bold">Skill<span className="text-gradient">Swap</span></span>
         </Link>
+        <ThemeToggle />
       </header>
 
       <div className="flex-1 flex items-center justify-center px-4 pb-12">
