@@ -92,7 +92,7 @@ const Home = () => {
       items.sort((a, b) => +new Date(b.at) - +new Date(a.at));
       setActivity(items.slice(0, 6));
     })();
-  }, [user]);
+  }, [user, refreshKey]);
 
   const needsSetup = profile !== null && (!profile.avatar_url || stats.teach === 0 || stats.learn === 0);
 
@@ -175,6 +175,10 @@ const Home = () => {
           </Button>
         </section>
       </div>
+
+      {(stats.learn === 0 || stats.teach === 0) && (
+        <LearnFree onAdded={() => setRefreshKey((k) => k + 1)} />
+      )}
 
       <section>
         <h2 className="font-display text-xl font-bold mb-4">Tips for great swaps</h2>
