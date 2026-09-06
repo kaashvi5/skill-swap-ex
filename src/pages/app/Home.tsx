@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Coins, Star, Sparkles, ArrowRight, Users, MessageCircle, Trophy, Repeat, Award, Flame, Globe2 } from "lucide-react";
+import LearnFree from "@/components/LearnFree";
 
 interface Profile {
   full_name: string;
@@ -36,6 +37,7 @@ const Home = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [stats, setStats] = useState({ teach: 0, learn: 0, pendingIn: 0, accepted: 0, certs: 0, community: 0 });
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -90,7 +92,7 @@ const Home = () => {
       items.sort((a, b) => +new Date(b.at) - +new Date(a.at));
       setActivity(items.slice(0, 6));
     })();
-  }, [user]);
+  }, [user, refreshKey]);
 
   const needsSetup = profile !== null && (!profile.avatar_url || stats.teach === 0 || stats.learn === 0);
 
@@ -173,6 +175,10 @@ const Home = () => {
           </Button>
         </section>
       </div>
+
+      {(stats.learn === 0 || stats.teach === 0) && (
+        <LearnFree onAdded={() => setRefreshKey((k) => k + 1)} />
+      )}
 
       <section>
         <h2 className="font-display text-xl font-bold mb-4">Tips for great swaps</h2>
