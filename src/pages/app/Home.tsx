@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Coins, Star, Sparkles, ArrowRight, Users, MessageCircle, Trophy, Repeat, Award, Flame, Globe2 } from "lucide-react";
+import LearnFree from "@/components/LearnFree";
 
 interface Profile {
   full_name: string;
@@ -36,6 +37,7 @@ const Home = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [stats, setStats] = useState({ teach: 0, learn: 0, pendingIn: 0, accepted: 0, certs: 0, community: 0 });
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!user) return;
