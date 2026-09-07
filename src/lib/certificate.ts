@@ -6,6 +6,8 @@ export interface CertificateData {
   issued_at: string;
   learnerName: string;
   teacherName: string;
+  verifyCode?: string | null;
+  certHash?: string | null;
 }
 
 const NAVY: [number, number, number] = [17, 26, 51];
