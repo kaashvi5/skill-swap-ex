@@ -16,28 +16,40 @@ export type Database = {
     Tables: {
       certificates: {
         Row: {
+          cert_hash: string | null
+          chain_index: number | null
           id: string
           issued_at: string
           learner_id: string
+          prev_hash: string | null
           skill: string
           swap_id: string
           teacher_id: string
+          verify_code: string | null
         }
         Insert: {
+          cert_hash?: string | null
+          chain_index?: number | null
           id?: string
           issued_at?: string
           learner_id: string
+          prev_hash?: string | null
           skill: string
           swap_id: string
           teacher_id: string
+          verify_code?: string | null
         }
         Update: {
+          cert_hash?: string | null
+          chain_index?: number | null
           id?: string
           issued_at?: string
           learner_id?: string
+          prev_hash?: string | null
           skill?: string
           swap_id?: string
           teacher_id?: string
+          verify_code?: string | null
         }
         Relationships: [
           {
@@ -90,6 +102,7 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
+          is_demo: boolean
           ratings_count: number
           trust_score: number
           updated_at: string
@@ -103,6 +116,7 @@ export type Database = {
           created_at?: string
           full_name: string
           id?: string
+          is_demo?: boolean
           ratings_count?: number
           trust_score?: number
           updated_at?: string
@@ -116,6 +130,7 @@ export type Database = {
           created_at?: string
           full_name?: string
           id?: string
+          is_demo?: boolean
           ratings_count?: number
           trust_score?: number
           updated_at?: string
@@ -383,6 +398,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_owner: { Args: never; Returns: boolean }
       confirm_swap_completion: { Args: { _swap_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -390,6 +406,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      public_activity: {
+        Args: { _user_id: string }
+        Returns: {
+          happened_at: string
+          kind: string
+          partner_name: string
+          skill: string
+        }[]
       }
       session_conflict_count: {
         Args: {
@@ -399,6 +424,19 @@ export type Database = {
           _swap_id: string
         }
         Returns: number
+      }
+      verify_certificate: {
+        Args: { _code: string }
+        Returns: {
+          cert_hash: string
+          chain_index: number
+          issued_at: string
+          learner_name: string
+          prev_hash: string
+          skill: string
+          teacher_name: string
+          valid: boolean
+        }[]
       }
     }
     Enums: {
