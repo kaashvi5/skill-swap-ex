@@ -26,6 +26,7 @@ const UserProfile = () => {
   const [learn, setLearn] = useState<{ skill: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState<SwapTarget | null>(null);
+  const [myTeach, setMyTeach] = useState<string[]>([]);
 
   useEffect(() => {
     if (!userId) return;
@@ -42,6 +43,11 @@ const UserProfile = () => {
       setLoading(false);
     })();
   }, [userId]);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("skills_teach").select("skill").eq("user_id", user.id).then(({ data }) => setMyTeach((data || []).map((x) => x.skill)));
+  }, [user]);
 
   if (loading) return <div className="text-center py-20 text-muted-foreground">Loading…</div>;
   if (!p) return <div className="text-center py-20 text-muted-foreground">This member doesn't exist.</div>;
@@ -121,7 +127,7 @@ const UserProfile = () => {
 
       <ProfileActivity userId={p.user_id} title={isMe ? "Your activity" : `${p.full_name.split(" ")[0]}'s activity`} />
 
-      {target && <SwapRequestDialog target={target} open={!!target} onOpenChange={(o) => !o && setTarget(null)} />}
+      <SwapRequestDialog target={target} onClose={() => setTarget(null)} currentUserId={user?.id} myTeachSkills={myTeach} />
     </div>
   );
 };
