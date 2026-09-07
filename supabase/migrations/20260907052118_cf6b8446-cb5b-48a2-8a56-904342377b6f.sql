@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.certificates_chain() FROM public, anon, authenticated;

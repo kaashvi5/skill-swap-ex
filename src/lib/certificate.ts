@@ -6,6 +6,8 @@ export interface CertificateData {
   issued_at: string;
   learnerName: string;
   teacherName: string;
+  verifyCode?: string | null;
+  certHash?: string | null;
 }
 
 const NAVY: [number, number, number] = [17, 26, 51];
@@ -148,11 +150,30 @@ export const buildCertificatePdf = (c: CertificateData) => {
   sig(160, "Mentor / Teacher", c.teacherName);
   sig(w / 2, "Date of issue", date);
 
-  // Footer id
+  // Footer: tamper-proof record
   doc.setFontSize(8.5);
   doc.setTextColor(160, 170, 190);
-  doc.text(`Certificate ID: ${c.id}`, w / 2, h - 74, { align: "center" });
-  doc.text("skillswap · trade skills, not money", w / 2, h - 62, { align: "center" });
+  if (c.verifyCode) {
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...BLUE);
+    doc.text(`Verification code: ${c.verifyCode}`, w / 2, h - 86, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(160, 170, 190);
+    doc.text(
+      `Verify at ${typeof window !== "undefined" ? window.location.origin : "skill-swap-ex.lovable.app"}/verify`,
+      w / 2,
+      h - 74,
+      { align: "center" }
+    );
+  } else {
+    doc.text(`Certificate ID: ${c.id}`, w / 2, h - 74, { align: "center" });
+  }
+  if (c.certHash) {
+    doc.setFontSize(6.5);
+    doc.text(`Ledger hash: ${c.certHash}`, w / 2, h - 63, { align: "center" });
+  } else {
+    doc.text("skillswap · trade skills, not money", w / 2, h - 62, { align: "center" });
+  }
 
   return doc;
 };
