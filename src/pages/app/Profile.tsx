@@ -320,6 +320,49 @@ const Profile = () => {
             </div>
           </section>
 
+          {isAdmin && (
+            <section className="rounded-3xl border bg-card p-6 md:p-8 shadow-soft">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="h-10 w-10 rounded-2xl bg-accent/10 text-accent flex items-center justify-center"><Shield className="h-5 w-5" /></div>
+                <div>
+                  <h2 className="font-display text-xl font-bold">Owner tools</h2>
+                  <p className="text-sm text-muted-foreground">Only you can see this section.</p>
+                </div>
+              </div>
+              <SettingRow
+                label="Show sample members"
+                desc="Turn off to see only real sign-ups across Discover, Matches and Ranks."
+                checked={demoOn}
+                onChange={(v) => { setDemoEnabled(v); toast.success(v ? "Sample members shown." : "Showing real accounts only."); }}
+              />
+            </section>
+          )}
+
+          <section className="rounded-3xl border bg-card p-6 md:p-8 shadow-soft">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center"><Shield className="h-5 w-5" /></div>
+              <div>
+                <h2 className="font-display text-xl font-bold">Change password</h2>
+                <p className="text-sm text-muted-foreground">Use at least 8 characters with a capital, a number and a symbol.</p>
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4 max-w-xl">
+              <div className="space-y-2">
+                <Label htmlFor="curpw">Current password</Label>
+                <Input id="curpw" type="password" value={curPw} onChange={(e) => setCurPw(e.target.value)} maxLength={72} autoComplete="current-password" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newpw">New password</Label>
+                <Input id="newpw" type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} maxLength={72} autoComplete="new-password" />
+              </div>
+            </div>
+            <Button onClick={changePassword} disabled={changingPw} className="rounded-full mt-4 gradient-primary text-primary-foreground border-0">
+              {changingPw ? "Updating…" : "Update password"}
+            </Button>
+          </section>
+
+
+
           <section className="rounded-3xl border bg-card p-6 md:p-8 shadow-soft">
             <div className="flex items-center gap-3 mb-5">
               <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center"><Shield className="h-5 w-5" /></div>
