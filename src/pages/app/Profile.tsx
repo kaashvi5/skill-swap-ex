@@ -10,6 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { passwordSchema } from "@/lib/validation";
+import { useDemoMode, setDemoEnabled } from "@/lib/demoMode";
 import { Camera, Plus, Trash2, FileCheck, Upload, Star, Coins, Settings, Bell, Globe, Shield, LogOut, User as UserIcon } from "lucide-react";
 
 type Level = "beginner" | "intermediate" | "expert";
@@ -51,6 +53,33 @@ const Profile = () => {
   const [newLearn, setNewLearn] = useState({ skill: "", level: "beginner" as Level });
   const proofInput = useRef<HTMLInputElement>(null);
   const [pendingProof, setPendingProof] = useState<File | null>(null);
+
+  const demoOn = useDemoMode();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [curPw, setCurPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [changingPw, setChangingPw] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      await supabase.rpc("claim_owner");
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+      setIsAdmin(!!data);
+    })();
+  }, [user]);
+
+  const changePassword = async () => {
+    const parsed = passwordSchema.safeParse(newPw);
+    if (!parsed.success) return toast.error(parsed.error.issues[0].message);
+    if (!curPw) return toast.error("Enter your current password.");
+    setChangingPw(true);
+    const { error } = await supabase.auth.updateUser({ password: newPw, current_password: curPw } as any);
+    setChangingPw(false);
+    if (error) return toast.error(error.message);
+    setCurPw(""); setNewPw("");
+    toast.success("Password updated.");
+  };
 
   useEffect(() => {
     if (!user) return;
