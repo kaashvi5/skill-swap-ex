@@ -167,13 +167,18 @@ const Discover = () => {
                   </div>
                 </div>
               </div>
-              <Button
-                onClick={() => setTarget({ user_id: u.user_id, full_name: u.full_name, teach: u.teach, pref: u.teach.find((t) => mySkillsLearn.includes(t.skill.toLowerCase()))?.skill })}
-                disabled={u.teach.length === 0}
-                className="rounded-full gradient-primary text-primary-foreground border-0 mt-auto"
-              >
-                <Send className="h-4 w-4 mr-1" />Send swap request
-              </Button>
+              <div className="mt-auto flex flex-wrap gap-2">
+                <Button
+                  onClick={() => setTarget({ user_id: u.user_id, full_name: u.full_name, teach: u.teach, pref: u.teach.find((t) => mySkillsLearn.includes(t.skill.toLowerCase()))?.skill })}
+                  disabled={u.teach.length === 0}
+                  className="rounded-full gradient-primary text-primary-foreground border-0 flex-1"
+                >
+                  <Send className="h-4 w-4 mr-1" />Send swap request
+                </Button>
+                <Button asChild variant="outline" className="rounded-full">
+                  <Link to={`/app/u/${u.user_id}`}>View</Link>
+                </Button>
+              </div>
             </div>
           ))}
         </div>
