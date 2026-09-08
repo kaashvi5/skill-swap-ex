@@ -17,6 +17,9 @@ import Matches from "./pages/app/Matches";
 import Exchanges from "./pages/app/Exchanges";
 import Leaderboard from "./pages/app/Leaderboard";
 import History from "./pages/app/History";
+import UserProfile from "./pages/app/UserProfile";
+import VerifyCertificate from "./pages/VerifyCertificate";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +32,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify" element={<VerifyCertificate />} />
           <Route
             path="/app"
             element={<ProtectedRoute><AppLayout><Home /></AppLayout></ProtectedRoute>}
@@ -64,6 +69,10 @@ const App = () => (
           <Route
             path="/app/history"
             element={<ProtectedRoute><AppLayout><History /></AppLayout></ProtectedRoute>}
+          />
+          <Route
+            path="/app/u/:userId"
+            element={<ProtectedRoute><AppLayout><UserProfile /></AppLayout></ProtectedRoute>}
           />
           <Route path="*" element={<NotFound />} />
         </Routes>

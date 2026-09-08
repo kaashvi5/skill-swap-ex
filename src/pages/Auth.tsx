@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { signupSchema, loginSchema } from "@/lib/validation";
+import { signupSchema, loginSchema, emailSchema } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
 
   useEffect(() => {
     if (!loading && user) navigate("/app", { replace: true });
@@ -81,6 +82,21 @@ const Auth = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const sendReset = async () => {
+    const parsedEmail = emailSchema.safeParse(email);
+    if (!parsedEmail.success) {
+      toast.error("Enter your email above first, then tap Forgot password.");
+      return;
+    }
+    setSendingReset(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(parsedEmail.data, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setSendingReset(false);
+    if (error) toast.error(error.message);
+    else toast.success("If that email has an account, a reset link is on its way.");
   };
 
   return (
@@ -144,6 +160,14 @@ const Auth = () => {
                 {submitting ? "Please wait..." : mode === "signup" ? "Create account" : "Sign in"}
               </Button>
             </form>
+
+            {mode === "signin" && (
+              <div className="mt-3 text-center">
+                <button type="button" onClick={sendReset} disabled={sendingReset} className="text-sm text-muted-foreground hover:text-primary hover:underline">
+                  {sendingReset ? "Sending reset link..." : "Forgot password?"}
+                </button>
+              </div>
+            )}
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
               {mode === "signup" ? "Already have an account? " : "New here? "}
