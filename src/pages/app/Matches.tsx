@@ -45,7 +45,7 @@ const Matches = () => {
       const myTeachLower = myTeachList.map((s) => s.toLowerCase());
       const myLearnLower = (myL || []).map((x: any) => x.skill.toLowerCase());
 
-      const all: Match[] = (profiles || []).map((p: any) => {
+      const all: Match[] = filterDemo(profiles || [], demoOn).map((p: any) => {
         const t = (teach || []).filter((x: any) => x.user_id === p.user_id).map((x: any) => ({ skill: x.skill, level: x.level }));
         const l = (learn || []).filter((x: any) => x.user_id === p.user_id).map((x: any) => ({ skill: x.skill }));
         const reasons: string[] = [];
@@ -69,7 +69,7 @@ const Matches = () => {
       setMatches(all.filter((m) => m.matchScore > 0).sort((a, b) => b.matchScore - a.matchScore || b.trust_score - a.trust_score));
       setLoading(false);
     })();
-  }, [user]);
+  }, [user, demoOn]);
 
   const mutual = matches.filter((m) => m.matchScore >= 5);
   const partial = matches.filter((m) => m.matchScore < 5);
