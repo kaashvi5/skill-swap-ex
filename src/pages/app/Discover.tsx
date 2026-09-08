@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Star, MapPin, Sparkles, FileCheck, Send } from "lucide-react";
 import { SwapRequestDialog, SwapTarget } from "@/components/SwapRequestDialog";
+import { filterDemo, useDemoMode } from "@/lib/demoMode";
 
 interface UserCard {
   user_id: string;
@@ -24,6 +25,7 @@ interface UserCard {
 
 const Discover = () => {
   const { user } = useAuth();
+  const demoOn = useDemoMode();
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<"all" | "teaches" | "wants">("all");
   const [sort, setSort] = useState<"match" | "rating" | "name">("match");
@@ -38,7 +40,7 @@ const Discover = () => {
     (async () => {
       setLoading(true);
       const [{ data: profiles }, { data: teach }, { data: learn }, { data: myT }, { data: myL }] = await Promise.all([
-        supabase.from("profiles").select("user_id,full_name,avatar_url,bio,country,city,trust_score,ratings_count").neq("user_id", user.id).limit(100),
+        supabase.from("profiles").select("user_id,full_name,avatar_url,bio,country,city,trust_score,ratings_count,is_demo").neq("user_id", user.id).limit(100),
         supabase.from("skills_teach").select("user_id,skill,level,proof_url"),
         supabase.from("skills_learn").select("user_id,skill"),
         supabase.from("skills_teach").select("skill").eq("user_id", user.id),
@@ -50,7 +52,7 @@ const Discover = () => {
       setMySkillsTeach(myTeachList);
       const myTeachLower = myTeachList.map((s) => s.toLowerCase());
 
-      const cards: UserCard[] = (profiles || []).map((p: any) => {
+      const cards: UserCard[] = filterDemo(profiles || [], demoOn).map((p: any) => {
         const tList = (teach || []).filter((t: any) => t.user_id === p.user_id).map((t: any) => ({ skill: t.skill, level: t.level, proof_url: t.proof_url }));
         const lList = (learn || []).filter((l: any) => l.user_id === p.user_id).map((l: any) => ({ skill: l.skill }));
         let score = 0;
@@ -61,7 +63,7 @@ const Discover = () => {
       setUsers(cards);
       setLoading(false);
     })();
-  }, [user]);
+  }, [user, demoOn]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

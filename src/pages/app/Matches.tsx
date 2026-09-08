@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { filterDemo, useDemoMode } from "@/lib/demoMode";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ interface Match {
 
 const Matches = () => {
   const { user } = useAuth();
+  const demoOn = useDemoMode();
   const [matches, setMatches] = useState<Match[]>([]);
   const [myTeach, setMyTeach] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +36,7 @@ const Matches = () => {
       const [{ data: myT }, { data: myL }, { data: profiles }, { data: teach }, { data: learn }] = await Promise.all([
         supabase.from("skills_teach").select("skill").eq("user_id", user.id),
         supabase.from("skills_learn").select("skill").eq("user_id", user.id),
-        supabase.from("profiles").select("user_id,full_name,avatar_url,country,city,trust_score,ratings_count").neq("user_id", user.id),
+        supabase.from("profiles").select("user_id,full_name,avatar_url,country,city,trust_score,ratings_count,is_demo").neq("user_id", user.id),
         supabase.from("skills_teach").select("user_id,skill,level"),
         supabase.from("skills_learn").select("user_id,skill"),
       ]);
