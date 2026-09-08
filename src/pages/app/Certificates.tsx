@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Award, Download, Eye, Share2, BadgeCheck } from "lucide-react";
+import { Award, Download, Eye, Share2, BadgeCheck, ShieldCheck, Copy } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { CertificateData, certificateBlob, downloadCertificate } from "@/lib/certificate";
 
@@ -35,11 +35,22 @@ const Certificates = () => {
           issued_at: c.issued_at,
           teacherName: profs?.find((p) => p.user_id === c.teacher_id)?.full_name || "Teacher",
           learnerName: me?.full_name || "Learner",
+          verifyCode: c.verify_code,
+          certHash: c.cert_hash,
         }))
       );
       setLoading(false);
     })();
   }, [user]);
+
+  const copyCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      toast({ title: "Code copied", description: "Anyone can check it on the verification page." });
+    } catch {
+      toast({ title: code, description: "Copy this code to verify the certificate." });
+    }
+  };
 
   const share = async (c: CertificateData) => {
     try {
@@ -61,7 +72,8 @@ const Certificates = () => {
       <div>
         <h1 className="font-display text-4xl font-bold tracking-tight mb-2">Your Certificates</h1>
         <p className="text-muted-foreground">
-          Issued automatically when both people confirm a completed swap.
+          Issued automatically when both people confirm a completed swap. Each one carries a tamper-proof code anyone can{" "}
+          <Link to="/verify" target="_blank" className="text-primary font-semibold hover:underline">check here</Link>.
         </p>
       </div>
 
@@ -80,6 +92,21 @@ const Certificates = () => {
           {certs.map((c) => (
             <div key={c.id} className="rounded-3xl border bg-card overflow-hidden shadow-soft hover:shadow-card transition-smooth">
               <CertificatePreview c={c} compact />
+              {c.verifyCode && (
+                <div className="px-5 pt-4 flex items-center justify-between gap-2 flex-wrap text-xs">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 font-mono font-semibold">
+                    <ShieldCheck className="h-3.5 w-3.5 text-success" />{c.verifyCode}
+                  </span>
+                  <div className="flex gap-2">
+                    <button onClick={() => copyCode(c.verifyCode!)} className="text-muted-foreground hover:text-primary inline-flex items-center gap-1">
+                      <Copy className="h-3.5 w-3.5" />Copy code
+                    </button>
+                    <Link to={`/verify?code=${c.verifyCode}`} target="_blank" className="text-primary font-semibold hover:underline">
+                      Verify page
+                    </Link>
+                  </div>
+                </div>
+              )}
               <div className="p-5 flex flex-wrap gap-2">
                 <Button onClick={() => downloadCertificate(c)} className="rounded-full gradient-primary text-primary-foreground border-0">
                   <Download className="h-4 w-4 mr-1" />Download PDF

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { filterDemo, useDemoMode } from "@/lib/demoMode";
 import { supabase } from "@/integrations/supabase/client";
 import { Trophy, Star, Coins, Award, Medal } from "lucide-react";
 
@@ -17,18 +18,19 @@ interface Row {
 
 const Leaderboard = () => {
   const { user } = useAuth();
+  const demoOn = useDemoMode();
   const [rows, setRows] = useState<Row[]>([]);
   const [tab, setTab] = useState<"trust" | "credits" | "certs">("trust");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const { data: profiles } = await supabase.from("profiles").select("user_id,full_name,avatar_url,country,trust_score,ratings_count");
+      const { data: profiles } = await supabase.from("profiles").select("user_id,full_name,avatar_url,country,trust_score,ratings_count,is_demo");
       const { data: myCredits } = await supabase.from("user_credits").select("user_id,credits");
       const { data: certs } = await supabase.from("certificates").select("learner_id");
       const certCount = (id: string) => (certs || []).filter((c: any) => c.learner_id === id).length;
 
-      setRows((profiles || []).map((p: any) => ({
+      setRows(filterDemo(profiles || [], demoOn).map((p: any) => ({
         user_id: p.user_id, full_name: p.full_name, avatar_url: p.avatar_url, country: p.country,
         trust_score: Number(p.trust_score), ratings_count: p.ratings_count,
         credits: (myCredits || []).find((c: any) => c.user_id === p.user_id)?.credits ?? 0,
@@ -36,7 +38,7 @@ const Leaderboard = () => {
       })));
       setLoading(false);
     })();
-  }, [user]);
+  }, [user, demoOn]);
 
   const sorted = [...rows].sort((a, b) => {
     if (tab === "trust") return b.trust_score - a.trust_score || b.ratings_count - a.ratings_count;
