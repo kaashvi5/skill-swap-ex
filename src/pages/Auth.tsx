@@ -19,6 +19,24 @@ const passwordChecks = [
   { label: "Special character", test: (v: string) => /[!@#$%^&*(),.?":{}|<>_\-+=\\[\]/~`';]/.test(v) },
 ];
 
+const friendlyError = (raw: string) => {
+  const m = raw.toLowerCase();
+  if (m.includes("weak") || m.includes("pwned"))
+    return "That password has appeared in known data leaks. Please pick a more unique one.";
+  if (m.includes("already registered") || m.includes("already been registered"))
+    return "This email is already registered. Please sign in instead.";
+  if (m.includes("invalid login") || m.includes("invalid"))
+    return "Invalid email or password.";
+  if (m.includes("email not confirmed"))
+    return "Please confirm your email first, then sign in.";
+  if (m.includes("rate limit") || m.includes("too many"))
+    return "Too many attempts. Please wait a minute and try again.";
+  if (m.includes("network") || m.includes("fetch"))
+    return "Network issue — check your connection and try again.";
+  return raw;
+};
+
+
 const Auth = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
