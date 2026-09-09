@@ -73,9 +73,7 @@ const Auth = () => {
           },
         });
         if (error) {
-          if (error.message.toLowerCase().includes("registered")) {
-            toast.error("This email is already registered. Please sign in.");
-          } else toast.error(error.message);
+          toast.error(friendlyError(error.message));
           return;
         }
         toast.success("Account created! Let's set up your profile.");
@@ -91,7 +89,7 @@ const Auth = () => {
           password: parsed.data.password,
         });
         if (error) {
-          toast.error(error.message.includes("Invalid") ? "Invalid email or password." : error.message);
+          toast.error(friendlyError(error.message));
           return;
         }
         toast.success("Welcome back!");
