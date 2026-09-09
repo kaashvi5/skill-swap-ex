@@ -19,6 +19,24 @@ const passwordChecks = [
   { label: "Special character", test: (v: string) => /[!@#$%^&*(),.?":{}|<>_\-+=\\[\]/~`';]/.test(v) },
 ];
 
+const friendlyError = (raw: string) => {
+  const m = raw.toLowerCase();
+  if (m.includes("weak") || m.includes("pwned"))
+    return "That password has appeared in known data leaks. Please pick a more unique one.";
+  if (m.includes("already registered") || m.includes("already been registered"))
+    return "This email is already registered. Please sign in instead.";
+  if (m.includes("invalid login") || m.includes("invalid"))
+    return "Invalid email or password.";
+  if (m.includes("email not confirmed"))
+    return "Please confirm your email first, then sign in.";
+  if (m.includes("rate limit") || m.includes("too many"))
+    return "Too many attempts. Please wait a minute and try again.";
+  if (m.includes("network") || m.includes("fetch"))
+    return "Network issue — check your connection and try again.";
+  return raw;
+};
+
+
 const Auth = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -55,9 +73,7 @@ const Auth = () => {
           },
         });
         if (error) {
-          if (error.message.toLowerCase().includes("registered")) {
-            toast.error("This email is already registered. Please sign in.");
-          } else toast.error(error.message);
+          toast.error(friendlyError(error.message));
           return;
         }
         toast.success("Account created! Let's set up your profile.");
@@ -73,7 +89,7 @@ const Auth = () => {
           password: parsed.data.password,
         });
         if (error) {
-          toast.error(error.message.includes("Invalid") ? "Invalid email or password." : error.message);
+          toast.error(friendlyError(error.message));
           return;
         }
         toast.success("Welcome back!");
@@ -95,7 +111,7 @@ const Auth = () => {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setSendingReset(false);
-    if (error) toast.error(error.message);
+    if (error) toast.error(friendlyError(error.message));
     else toast.success("If that email has an account, a reset link is on its way.");
   };
 
