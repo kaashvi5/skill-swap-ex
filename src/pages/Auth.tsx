@@ -111,7 +111,7 @@ const Auth = () => {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setSendingReset(false);
-    if (error) toast.error(error.message);
+    if (error) toast.error(friendlyError(error.message));
     else toast.success("If that email has an account, a reset link is on its way.");
   };
 
