@@ -8,6 +8,13 @@
       "when": 1792068609757,
       "tag": "0000_scope_storage_reads_to_owner",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792068783421,
+      "tag": "0001_profiles_own_only",
+      "breakpoints": true
     }
   ]
 }
